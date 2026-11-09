@@ -5,15 +5,23 @@ import com.lanbai.core.AnomalyLoader;
 import com.lanbai.core.AnomalyRegistry;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.commands.Commands;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 
 import java.util.List;
 
 /**
  * /lanbai list              列出所有收容物
- * /lanbai spawn <序号|名字>  在玩家位置创建
+ * /lanbai spawn <序号|名字>  在玩家位置创建（实体/方块/物品）
  * /lanbai info <序号>        查看详情
  * /lanbai reload            重载数据
  * /lanbai clear             清空
@@ -31,10 +39,9 @@ public class AnomalyCommand {
                         int i = 1;
                         for (Anomaly a : all) {
                             int n = i++;
+                            if (n > 300) break;
                             ctx.getSource().sendSuccess(() -> Component.literal(
-                                    "  §e" + n + ". §f" + a.name
-                                            + " §7(" + a.effects.size() + "效果)"), false);
-                            if (n > 200) break;
+                                    "  §e" + n + ". §f" + a.name + " §7(" + a.effects.size() + "效果)"), false);
                         }
                         return 1;
                     }))
@@ -48,13 +55,8 @@ public class AnomalyCommand {
                                             ctx.getSource().sendFailure(Component.literal("§c未找到: " + arg));
                                             return 0;
                                         }
-                                        ServerLevel level = (ServerLevel) p.level();
-                                        var pos = p.blockPosition();
-                                        a.target.ref = "minecraft:overworld;" + pos.getX() + "," + pos.getY() + "," + pos.getZ();
-                                        a.target.scope = Anomaly.BindTarget.Scope.INSTANCE;
-                                        AnomalyRegistry.get().register(a);
-                                        ctx.getSource().sendSuccess(() -> Component.literal(
-                                                "§a已创建收容物: §f" + a.name + " §7于 " + pos.toShortString()), false);
+                                        String msg = materialize(a, p);
+                                        ctx.getSource().sendSuccess(() -> Component.literal(msg), false);
                                         return 1;
                                     })))
                     .then(Commands.literal("info")
@@ -67,11 +69,11 @@ public class AnomalyCommand {
                                             return 0;
                                         }
                                         ctx.getSource().sendSuccess(() -> Component.literal(
-                                                "§6" + a.name + " §7(" + a.id + ")"), false);
+                                                "§6" + a.name + " §7(" + a.id + ") §f绑定:" + a.target.kind), false);
                                         for (Anomaly.Effect e : a.effects) {
-                                            String t = e.trigger == null ? "被动" : String.join("/", e.trigger.conditions);
+                                            String t = e.trigger == null ? "§e被动" : "§b" + String.join("/", e.trigger.conditions);
                                             ctx.getSource().sendSuccess(() -> Component.literal(
-                                                    "  §b" + e.id + " §7depth=" + e.depth + " 触发=" + t), false);
+                                                    "  §d" + e.id + " §7depth=" + e.depth + " 触发=" + t), false);
                                         }
                                         return 1;
                                     })))
@@ -90,15 +92,92 @@ public class AnomalyCommand {
         });
     }
 
+    /**
+     * 把收容物「实体化」到玩家身边：根据绑定类型创建对应的东西
+     */
+    private static String materialize(Anomaly a, Player p) {
+        ServerLevel level = (ServerLevel) p.level();
+        BlockPos pos = p.blockPosition();
+        AnomalyRegistry reg = AnomalyRegistry.get();
+
+        // 先移除旧的索引
+        reg.unregister(a.id);
+
+        switch (a.target.kind) {
+            case ENTITY -> {
+                // 生成一个实体，绑定到它
+                String entId = "minecraft:zombie";
+                for (Anomaly.Effect e : a.effects) {
+                    if ("ef_spawn".equals(e.id)) {
+                        entId = e.strVal("entity", "minecraft:zombie");
+                        break;
+                    }
+                }
+                EntityType<?> type = BuiltInRegistries.ENTITY_TYPE.get(new ResourceLocation(entId));
+                if (type != null) {
+                    Entity e = type.create(level);
+                    if (e != null) {
+                        e.moveTo(pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5);
+                        level.addFreshEntity(e);
+                        a.target.scope = Anomaly.BindTarget.Scope.INSTANCE;
+                        a.target.ref = e.getUUID().toString();
+                        reg.register(a);
+                        return "§a已创建 §f" + a.name + " §7→ 实体 " + entId + " @ " + e.blockPosition().toShortString();
+                    }
+                }
+                return "§c生成实体失败";
+            }
+            case BLOCK, POS, AREA -> {
+                // 放一个方块
+                BlockPos target = pos.below();
+                Block b = Blocks.STONE;
+                for (Anomaly.Effect e : a.effects) {
+                    if ("ef_set_block".equals(e.id)) {
+                        Block tmp = BuiltInRegistries.BLOCK.get(new ResourceLocation(e.strVal("block", "minecraft:stone")));
+                        if (tmp != null) b = tmp;
+                        break;
+                    }
+                }
+                level.setBlockAndUpdate(target, b.defaultBlockState());
+                a.target.scope = Anomaly.BindTarget.Scope.INSTANCE;
+                a.target.ref = "minecraft:overworld;" + target.getX() + "," + target.getY() + "," + target.getZ();
+                a.target.persistent = true;
+                reg.register(a);
+                return "§a已创建 §f" + a.name + " §7→ 方块 @ " + target.toShortString();
+            }
+            case ITEM -> {
+                ItemStack stack = new ItemStack(net.minecraft.world.item.Items.DIAMOND_SWORD);
+                stack.setHoverName(Component.literal("§6" + a.name));
+                if (!p.getInventory().add(stack)) {
+                    p.drop(stack, false);
+                }
+                a.target.scope = Anomaly.BindTarget.Scope.INSTANCE;
+                a.target.ref = p.getUUID().toString();
+                reg.register(a);
+                return "§a已创建 §f" + a.name + " §7→ 物品已放入背包";
+            }
+            case BEHAVIOR -> {
+                a.target.scope = Anomaly.BindTarget.Scope.INSTANCE;
+                a.target.ref = p.getUUID().toString();
+                reg.register(a);
+                return "§a已创建 §f" + a.name + " §7→ 绑定行为到玩家";
+            }
+            default -> {
+                a.target.scope = Anomaly.BindTarget.Scope.INSTANCE;
+                a.target.ref = p.getUUID().toString();
+                reg.register(a);
+                return "§a已创建 §f" + a.name + " §7→ 绑定到玩家";
+            }
+        }
+    }
+
     private static Anomaly find(String arg) {
         List<Anomaly> all = List.copyOf(AnomalyRegistry.get().all());
-        // 先按序号
         try {
             int idx = Integer.parseInt(arg);
             if (idx >= 1 && idx <= all.size()) return all.get(idx - 1);
         } catch (NumberFormatException ignored) {
         }
-        // 再按名字
         for (Anomaly a : all) {
             if (a.name.equals(arg) || a.name.contains(arg)) return a;
         }
