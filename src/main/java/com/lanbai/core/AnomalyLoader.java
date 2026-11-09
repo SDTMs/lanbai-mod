@@ -48,6 +48,17 @@ public class AnomalyLoader {
         return count;
     }
 
+    private static Object toJava(com.google.gson.JsonElement v) {
+        if (v.isJsonNull()) return null;
+        var p = v.getAsJsonPrimitive();
+        if (p.isBoolean()) return p.getAsBoolean();
+        if (p.isNumber()) {
+            double d = p.getAsDouble();
+            return (d == Math.floor(d) && !Double.isInfinite(d)) ? (Object) (int) d : (Object) d;
+        }
+        return p.getAsString();
+    }
+
     private static Anomaly parse(JsonObject o) {
         String id = o.get("id").getAsString();
         String name = o.get("name").getAsString();
@@ -79,21 +90,20 @@ public class AnomalyLoader {
 
             if (eo.has("params")) {
                 for (Map.Entry<String, com.google.gson.JsonElement> en : eo.getAsJsonObject("params").entrySet()) {
-                    JsonObject p = en.getValue().getAsJsonObject();
-                    if (p.has("value")) {
-                        var v = p.get("value");
-                        if (v.isJsonPrimitive() && v.getAsJsonPrimitive().isNumber()) {
-                            e.set(en.getKey(), v.getAsDouble());
-                        } else if (v.isJsonPrimitive() && v.getAsJsonPrimitive().isBoolean()) {
-                            e.set(en.getKey(), v.getAsBoolean());
-                        } else {
-                            e.set(en.getKey(), v.getAsString());
+                    com.google.gson.JsonElement val = en.getValue();
+                    // 兼容两种格式：直接值 或 {value:..} / {min,max,randomMode}
+                    if (val.isJsonObject() && !val.getAsJsonObject().has("uuid")) {
+                        JsonObject p = val.getAsJsonObject();
+                        if (p.has("value")) {
+                            e.set(en.getKey(), toJava(p.get("value")));
+                        } else if (p.has("min") && p.has("max")) {
+                            double min = p.get("min").getAsDouble();
+                            double max = p.get("max").getAsDouble();
+                            String rm = p.has("randomMode") ? p.get("randomMode").getAsString() : "GENERATION";
+                            e.setRange(en.getKey(), min, max, Anomaly.RandomMode.valueOf(rm));
                         }
-                    } else if (p.has("min") && p.has("max")) {
-                        double min = p.get("min").getAsDouble();
-                        double max = p.get("max").getAsDouble();
-                        String rm = p.has("randomMode") ? p.get("randomMode").getAsString() : "GENERATION";
-                        e.setRange(en.getKey(), min, max, Anomaly.RandomMode.valueOf(rm));
+                    } else {
+                        e.set(en.getKey(), toJava(val));
                     }
                 }
             }
