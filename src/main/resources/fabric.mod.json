@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "id": "lanbai",
+  "version": "${version}",
+  "name": "LanBai Containment",
+  "description": "LanBai She containment anomaly system",
+  "authors": ["SDTM"],
+  "contact": {},
+  "license": "MIT",
+  "environment": "*",
+  "entrypoints": {
+    "main": ["com.lanbai.LanbaiMod"]
+  },
+  "mixins": ["lanbai.mixins.json"],
+  "depends": {
+    "fabricloader": ">=0.15.0",
+    "minecraft": "~1.20.1",
+    "java": ">=17",
+    "fabric-api": "*"
+  }
+}
