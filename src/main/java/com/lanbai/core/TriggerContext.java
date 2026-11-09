@@ -5,7 +5,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.ItemStack;
 
-import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -14,10 +13,10 @@ import java.util.Map;
  */
 public class TriggerContext {
     public ServerLevel level;
-    @Nullable public Entity source;
-    @Nullable public Entity target;
-    @Nullable public BlockPos pos;
-    @Nullable public ItemStack item;
+    public Entity source;
+    public Entity target;
+    public BlockPos pos;
+    public ItemStack item;
     public long gameTime;
 
     /** 触发类型特有数据（按键序列/聊天内容/配方等） */
