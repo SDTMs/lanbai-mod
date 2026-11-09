@@ -66,7 +66,7 @@ public final class EffectExecutors {
         int level = e.intVal("level", 0);
         int duration = e.intVal("duration", 200);
 
-        MobEffect me = BuiltInRegistries.MOB_EFFECT.getValue(new ResourceLocation(effectId));
+        MobEffect me = BuiltInRegistries.MOB_EFFECT.get(new ResourceLocation(effectId));
         if (me == null) return;
         living.addEffect(new MobEffectInstance(me, duration, level, false, true));
     }
@@ -100,7 +100,7 @@ public final class EffectExecutors {
         String mode = e.strVal("mode", "multiply_base");
 
         ResourceLocation rl = new ResourceLocation(attrName);
-        Attribute attr = BuiltInRegistries.ATTRIBUTE.getValue(rl);
+        Attribute attr = BuiltInRegistries.ATTRIBUTE.get(rl);
         if (attr == null) return;
 
         AttributeInstance inst = living.getAttribute(attr);
@@ -142,7 +142,7 @@ public final class EffectExecutors {
     private static void setBlock(Anomaly.Effect e, TriggerContext ctx) {
         if (ctx.pos == null) return;
         String blockId = e.strVal("block", "minecraft:stone");
-        Block b = BuiltInRegistries.BLOCK.getValue(new ResourceLocation(blockId));
+        Block b = BuiltInRegistries.BLOCK.get(new ResourceLocation(blockId));
         if (b == null) return;
         ctx.level.setBlockAndUpdate(ctx.pos, b.defaultBlockState());
     }
@@ -167,7 +167,7 @@ public final class EffectExecutors {
 
     private static void spawn(Anomaly.Effect e, TriggerContext ctx) {
         String entityId = e.strVal("entity", "minecraft:zombie");
-        var type = BuiltInRegistries.ENTITY_TYPE.getValue(new ResourceLocation(entityId));
+        var type = BuiltInRegistries.ENTITY_TYPE.get(new ResourceLocation(entityId));
         if (type == null || ctx.pos == null) return;
         Entity spawned = type.create(ctx.level);
         if (spawned == null) return;

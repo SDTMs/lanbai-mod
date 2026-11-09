@@ -101,26 +101,26 @@ public class AnomalyEvents {
 
         // 实体加载
         ServerEntityEvents.ENTITY_LOAD.register((entity, world) -> {
-            if (!(world instanceof ServerLevel level)) return;
-            TriggerContext ctx = new TriggerContext(level).target(entity).source(entity);
-            dispatch(level, ctx, AnomalyRegistry.get().collectFor(entity), fired("on_spawn"));
+            TriggerContext ctx = new TriggerContext(world).target(entity).source(entity);
+            dispatch(world, ctx, AnomalyRegistry.get().collectFor(entity), fired("on_spawn"));
         });
 
         // 受伤
-        ServerLivingEntityEvents.AFTER_DAMAGE.register((entity, source, baseDamage, damageTaken, blocked) -> {
-            if (!(entity.level() instanceof ServerLevel level)) return;
+        ServerLivingEntityEvents.ALLOW_DAMAGE.register((entity, source, amount) -> {
+            if (!(entity.level() instanceof ServerLevel level)) return true;
             TriggerContext ctx = new TriggerContext(level)
                     .source(source.getEntity())
                     .target(entity);
-            ctx.put("damage", damageTaken);
+            ctx.put("damage", amount);
             dispatch(level, ctx, AnomalyRegistry.get().collectFor(entity), fired("on_damage", "on_attacked"));
 
             Entity attacker = source.getEntity();
             if (attacker != null && attacker.level() instanceof ServerLevel al) {
                 TriggerContext c2 = new TriggerContext(al).source(attacker).target(entity);
-                c2.put("damage", damageTaken);
+                c2.put("damage", amount);
                 dispatch(al, c2, AnomalyRegistry.get().collectFor(attacker), fired("on_attack"));
             }
+            return true;
         });
 
         // 死亡
