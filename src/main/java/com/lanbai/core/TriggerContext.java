@@ -63,9 +63,10 @@ public class TriggerContext {
      * 判定缓存键：稳定字段拼接。
      * 注意：物品用 类型ID + NBT hash，区分不同附魔。
      */
-    public String hash(Anomaly anomalyA, Effect effectA, Anomaly anomalyB, Effect effectB) {
+    public String hash(Anomaly anomalyA, Anomaly.Effect effectA, Anomaly anomalyB, Anomaly.Effect effectB) {
         StringBuilder sb = new StringBuilder(128);
-        sb.append(anomalyA.id).append('#').append(anomalyA.effects.indexOf(effectA));
+        sb.append(anomalyA == null ? "-" : anomalyA.id).append('#')
+          .append(anomalyA == null ? "-" : anomalyA.effects.indexOf(effectA));
         sb.append('|');
         sb.append(anomalyB == null ? "-" : anomalyB.id).append('#')
           .append(anomalyB == null ? "-" : anomalyB.effects.indexOf(effectB));
