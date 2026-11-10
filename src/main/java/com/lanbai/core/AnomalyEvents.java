@@ -109,12 +109,32 @@ public class AnomalyEvents {
     }
 
     /**
+     * 该实体此刻生效的收容物：
+     *   TYPE 实体绑定 + INSTANCE 绑定 + 手持/副手物品的 ITEM 绑定。
+     */
+    private static List<Anomaly> activeFor(Entity e) {
+        List<Anomaly> list = new ArrayList<>(AnomalyRegistry.get().collectFor(e));
+        if (e instanceof Player p) {
+            var main = BuiltInRegistries.ITEM.getKey(p.getMainHandItem().getItem());
+            var off = BuiltInRegistries.ITEM.getKey(p.getOffhandItem().getItem());
+            String mm = main != null ? main.toString() : "";
+            String oo = off != null ? off.toString() : "";
+            for (Anomaly a : AnomalyRegistry.get().all()) {
+                if (a.target == null || a.target.kind != Anomaly.BindTarget.Kind.ITEM) continue;
+                if (a.target.scope != Anomaly.BindTarget.Scope.TYPE) continue;
+                if (mm.equals(a.target.ref) || oo.equals(a.target.ref)) list.add(a);
+            }
+        }
+        return list;
+    }
+
+    /**
      * 声明式否决检查：实体身上若有 ef_deny 且 type 匹配，该行为直接被拦下。
      * 这是「绝对特性」的核心——不需要触发，绑定即生效。
      */
     private static boolean denied(Entity entity, String type) {
         if (entity == null) return false;
-        for (Anomaly a : AnomalyRegistry.get().collectFor(entity)) {
+        for (Anomaly a : activeFor(entity)) {
             for (Anomaly.Effect ef : a.effects) {
                 if (!"ef_deny".equals(ef.id)) continue;
                 String t = ef.strVal("type", "all");
@@ -220,7 +240,7 @@ public class AnomalyEvents {
             TriggerContext ctx = new TriggerContext(level)
                     .source(player).target(player).pos(pos).item(player.getItemInHand(hand));
             List<Anomaly> list = new ArrayList<>(AnomalyRegistry.get().getBlockAnomalies(pos));
-            list.addAll(AnomalyRegistry.get().getInstanceAnomalies(player));
+            list.addAll(activeFor(player));
             dispatch(level, ctx, list, fired("on_use_block", "on_use", "on_contact"), player);
             return InteractionResult.PASS;
         });
@@ -372,7 +392,7 @@ public class AnomalyEvents {
                 String oldEk = equipCache.put(player.getUUID(), ek);
                 if (oldEk != null && !oldEk.equals(ek)) {
                     TriggerContext ctx = new TriggerContext(level).source(player).target(player);
-                    dispatch(level, ctx, AnomalyRegistry.get().getInstanceAnomalies(player),
+                    dispatch(level, ctx, activeFor(player),
                             fired("on_equip", "on_unequip"), player);
                 }
 
@@ -380,7 +400,7 @@ public class AnomalyEvents {
                 Boolean oldSleep = sleepCache.put(player.getUUID(), sleeping);
                 if (oldSleep != null && oldSleep != sleeping) {
                     TriggerContext ctx = new TriggerContext(level).source(player).target(player);
-                    dispatch(level, ctx, AnomalyRegistry.get().getInstanceAnomalies(player),
+                    dispatch(level, ctx, activeFor(player),
                             fired(sleeping ? "on_sleep" : "on_wake"), player);
                 }
 
@@ -388,7 +408,7 @@ public class AnomalyEvents {
                 Boolean oldSneak = sneakCache.put(player.getUUID(), sneaking);
                 if (oldSneak != null && oldSneak != sneaking) {
                     TriggerContext ctx = new TriggerContext(level).source(player).target(player);
-                    dispatch(level, ctx, AnomalyRegistry.get().getInstanceAnomalies(player),
+                    dispatch(level, ctx, activeFor(player),
                             fired(sneaking ? "on_sneak" : "on_stand"), player);
                 }
 
