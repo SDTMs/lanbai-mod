@@ -1289,5 +1289,305 @@
   ],
   "intraConflict": false,
   "depth": 48192
+ },
+ {
+  "id": "b04_god_view",
+  "name": "上帝视角",
+  "book": "B03",
+  "bindTarget": {
+   "scope": "TYPE",
+   "kind": "ITEM",
+   "ref": "minecraft:ender_eye",
+   "persistent": false
+  },
+  "effects": [
+   {
+    "id": "ef_camera",
+    "params": {
+     "mode": "attach",
+     "selector": "source",
+     "targetFilter": "player"
+    },
+    "trigger": {
+     "conditions": [
+      "on_use"
+     ],
+     "mode": "OR"
+    }
+   },
+   {
+    "id": "ef_force_look",
+    "params": {
+     "selector": "source",
+     "targetFilter": "player"
+    },
+    "trigger": {
+     "conditions": [
+      "on_use"
+     ],
+     "mode": "OR"
+    }
+   },
+   {
+    "id": "ef_scan",
+    "params": {
+     "radius": 128,
+     "header": "§7[上帝视角] ",
+     "targetFilter": "all"
+    },
+    "trigger": {
+     "conditions": [
+      "on_use"
+     ],
+     "mode": "OR"
+    }
+   },
+   {
+    "id": "ef_status",
+    "params": {
+     "effect": "minecraft:night_vision",
+     "level": 0,
+     "duration": -1,
+     "selector": "source",
+     "targetFilter": "player"
+    },
+    "trigger": {
+     "conditions": [
+      "on_use"
+     ],
+     "mode": "OR"
+    }
+   }
+  ],
+  "intraConflict": false,
+  "depth": 52000
+ },
+ {
+  "id": "b04_gravity_well",
+  "name": "重力井",
+  "book": "B02",
+  "bindTarget": {
+   "scope": "TYPE",
+   "kind": "ITEM",
+   "ref": "minecraft:lodestone",
+   "persistent": false
+  },
+  "effects": [
+   {
+    "id": "ef_gravity",
+    "params": {
+     "factor": 0.15,
+     "selector": "around",
+     "radius": 24,
+     "targetFilter": "all"
+    },
+    "period": 10
+   },
+   {
+    "id": "ef_blackhole",
+    "params": {
+     "radius": 24,
+     "speed": 1.2
+    },
+    "period": 10
+   },
+   {
+    "id": "ef_message",
+    "params": {
+     "text": "§5[重力井] 重力正在坍塌",
+     "selector": "source",
+     "mode": "actionbar"
+    },
+    "trigger": {
+     "conditions": [
+      "on_use"
+     ],
+     "mode": "OR"
+    }
+   }
+  ],
+  "intraConflict": false,
+  "depth": 52000
+ },
+ {
+  "id": "b04_alchemy_book",
+  "name": "炼金术之书",
+  "book": "B02",
+  "bindTarget": {
+   "scope": "TYPE",
+   "kind": "ITEM",
+   "ref": "minecraft:book",
+   "persistent": false
+  },
+  "effects": [
+   {
+    "id": "ef_datapack",
+    "params": {
+     "path": "recipes/lanbai_alchemy.json",
+     "json": "{\"type\": \"minecraft:crafting_shapeless\", \"ingredients\": [{\"item\": \"minecraft:dirt\"}, {\"item\": \"minecraft:stick\"}], \"result\": {\"item\": \"minecraft:diamond\", \"count\": 1}}"
+    },
+    "trigger": {
+     "conditions": [
+      "on_use"
+     ],
+     "mode": "OR"
+    }
+   },
+   {
+    "id": "ef_message",
+    "params": {
+     "text": "§6[炼金术] 泥土+木棍 = 钻石，已写入世界规则",
+     "selector": "source",
+     "mode": "chat"
+    },
+    "trigger": {
+     "conditions": [
+      "on_use"
+     ],
+     "mode": "OR"
+    }
+   },
+   {
+    "id": "ef_sound",
+    "params": {
+     "sound": "minecraft:block.enchantment_table.use",
+     "volume": 1.0
+    },
+    "trigger": {
+     "conditions": [
+      "on_use"
+     ],
+     "mode": "OR"
+    }
+   }
+  ],
+  "intraConflict": false,
+  "depth": 53000
+ },
+ {
+  "id": "b04_action_puppet",
+  "name": "提线木偶",
+  "book": "B03",
+  "bindTarget": {
+   "scope": "TYPE",
+   "kind": "ITEM",
+   "ref": "minecraft:string",
+   "persistent": false
+  },
+  "effects": [
+   {
+    "id": "ef_action",
+    "params": {
+     "action": "drop",
+     "selector": "around",
+     "radius": 12,
+     "targetFilter": "player"
+    },
+    "trigger": {
+     "conditions": [
+      "on_use"
+     ],
+     "mode": "OR"
+    }
+   },
+   {
+    "id": "ef_action",
+    "params": {
+     "action": "sneak",
+     "selector": "around",
+     "radius": 12,
+     "targetFilter": "player"
+    },
+    "trigger": {
+     "conditions": [
+      "on_use"
+     ],
+     "mode": "OR"
+    },
+    "delay": 20
+   },
+   {
+    "id": "ef_action",
+    "params": {
+     "action": "stand",
+     "selector": "around",
+     "radius": 12,
+     "targetFilter": "player"
+    },
+    "trigger": {
+     "conditions": [
+      "on_use"
+     ],
+     "mode": "OR"
+    },
+    "delay": 60
+   },
+   {
+    "id": "ef_message",
+    "params": {
+     "text": "§8[提线木偶] 你的身体不再属于你",
+     "selector": "source",
+     "mode": "chat"
+    },
+    "trigger": {
+     "conditions": [
+      "on_use"
+     ],
+     "mode": "OR"
+    }
+   }
+  ],
+  "intraConflict": false,
+  "depth": 53000
+ },
+ {
+  "id": "b04_gravity_zero",
+  "name": "失重领域",
+  "book": "B02",
+  "bindTarget": {
+   "scope": "TYPE",
+   "kind": "ITEM",
+   "ref": "minecraft:shulker_shell",
+   "persistent": false
+  },
+  "effects": [
+   {
+    "id": "ef_gravity",
+    "params": {
+     "factor": 0.0,
+     "selector": "around",
+     "radius": 16,
+     "targetFilter": "all"
+    },
+    "period": 10
+   },
+   {
+    "id": "ef_launch",
+    "params": {
+     "power": 0.3,
+     "direction": "up",
+     "selector": "around",
+     "radius": 16,
+     "targetFilter": "all"
+    },
+    "period": 40
+   },
+   {
+    "id": "ef_message",
+    "params": {
+     "text": "§b[失重领域] 重力已消失",
+     "selector": "source",
+     "mode": "actionbar"
+    },
+    "trigger": {
+     "conditions": [
+      "on_use"
+     ],
+     "mode": "OR"
+    }
+   }
+  ],
+  "intraConflict": false,
+  "depth": 52000
  }
 ]

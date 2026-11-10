@@ -122,6 +122,14 @@ public final class EffectExecutors {
             case "ef_gravity" -> gravity(e, ctx);
             case "ef_loot" -> loot(e, ctx);
             case "ef_datapack" -> datapack(e, ctx);
+            // ---- v5：穿墙 / 粒子 / 物品 / 骑乘 / 状态 ----
+            case "ef_noclip" -> noclip(e, ctx);
+            case "ef_particle" -> particle(e, ctx);
+            case "ef_item" -> item(e, ctx);
+            case "ef_mount" -> mount(e, ctx);
+            case "ef_invisible" -> invisible(e, ctx);
+            case "ef_health" -> health(e, ctx);
+            case "ef_food" -> food(e, ctx);
             default -> { /* 未知效果：忽略，不中断其他效果 */ }
         }
     }
@@ -1197,6 +1205,93 @@ public final class EffectExecutors {
             return Integer.parseInt(s.trim());
         } catch (Exception ex) {
             return def;
+        }
+    }
+
+    // ==================================================================
+    // v5：穿墙 / 粒子 / 物品 NBT / 骑乘 / 隐身 / 血量 / 饥饿
+    // ==================================================================
+
+    /** 穿墙：noPhysics 关闭碰撞（服务端侧），玩家端用传送穿越 */
+    private static void noclip(Anomaly.Effect e, TriggerContext ctx) {
+        boolean on = e.val("value", Boolean.TRUE) != Boolean.FALSE;
+        for (LivingEntity le : selectTargets(e, ctx)) {
+            le.noPhysics = on;
+            if (on) le.setNoGravity(true);
+            else if (GravityStore.get(le) == 1.0f) le.setNoGravity(false);
+            le.hurtMarked = true;
+        }
+    }
+
+    /** 粒子 */
+    private static void particle(Anomaly.Effect e, TriggerContext ctx) {
+        BlockPos base = ctx.pos != null ? ctx.pos
+                : (ctx.target != null ? ctx.target.blockPosition()
+                : (ctx.source != null ? ctx.source.blockPosition() : null));
+        if (base == null) return;
+        var type = BuiltInRegistries.PARTICLE_TYPE.get(
+                new ResourceLocation(e.strVal("particle", "minecraft:flame")));
+        if (!(type instanceof net.minecraft.core.particles.SimpleParticleType st)) return;
+        int count = Math.max(1, Math.min(e.intVal("count", 20), 500));
+        double spread = e.doubleVal("spread", 1.0);
+        double speed = e.doubleVal("speed", 0.1);
+        ctx.level.sendParticles(st, base.getX() + 0.5, base.getY() + 1.0, base.getZ() + 0.5,
+                count, spread, spread, spread, speed);
+    }
+
+    /** 高级物品：自定义名字 / 不可破坏 / 附魔 */
+    private static void item(Anomaly.Effect e, TriggerContext ctx) {
+        Item it = BuiltInRegistries.ITEM.get(new ResourceLocation(e.strVal("item", "minecraft:diamond_sword")));
+        if (it == null || it == Items.AIR) return;
+        int count = Math.max(1, Math.min(e.intVal("count", 1), 64));
+        String name = e.strVal("name", "");
+        String ench = e.strVal("enchantment", "");
+        boolean unbreakable = e.val("unbreakable", Boolean.FALSE) != Boolean.FALSE;
+        for (LivingEntity le : selectTargets(e, ctx)) {
+            if (!(le instanceof Player p)) continue;
+            ItemStack st = new ItemStack(it, count);
+            if (!name.isEmpty()) st.setHoverName(Component.literal(name));
+            if (unbreakable) st.getOrCreateTag().putBoolean("Unbreakable", true);
+            if (!ench.isEmpty()) {
+                Enchantment en = BuiltInRegistries.ENCHANTMENT.get(new ResourceLocation(ench));
+                if (en != null) st.enchant(en, e.intVal("level", 1));
+            }
+            if (!p.getInventory().add(st)) p.drop(st, false);
+        }
+    }
+
+    /** 骑乘：把 source 骑到 target 上 */
+    private static void mount(Anomaly.Effect e, TriggerContext ctx) {
+        Entity rider = ctx.source;
+        Entity vehicle = ctx.target;
+        if (rider == null || vehicle == null || rider == vehicle) return;
+        rider.startRiding(vehicle, true);
+    }
+
+    /** 隐身 */
+    private static void invisible(Anomaly.Effect e, TriggerContext ctx) {
+        boolean on = e.val("value", Boolean.TRUE) != Boolean.FALSE;
+        for (LivingEntity le : selectTargets(e, ctx)) {
+            le.setInvisible(on);
+            if (on) le.setGlowingTag(false);
+        }
+    }
+
+    /** 直接设置血量 */
+    private static void health(Anomaly.Effect e, TriggerContext ctx) {
+        float v = (float) e.doubleVal("value", 20.0);
+        boolean full = e.val("full", Boolean.FALSE) != Boolean.FALSE;
+        for (LivingEntity le : selectTargets(e, ctx)) {
+            float target = full ? le.getMaxHealth() : Math.max(0.1f, Math.min(v, le.getMaxHealth()));
+            le.setHealth(target);
+        }
+    }
+
+    /** 饥饿值 */
+    private static void food(Anomaly.Effect e, TriggerContext ctx) {
+        int level = Math.max(0, Math.min(e.intVal("level", 20), 20));
+        for (LivingEntity le : selectTargets(e, ctx)) {
+            if (le instanceof Player p) p.getFoodData().setFoodLevel(level);
         }
     }
 }
