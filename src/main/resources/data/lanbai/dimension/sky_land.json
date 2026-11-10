@@ -1,0 +1,17 @@
+{
+ "type": "lanbai:sky_land",
+ "generator": {
+  "type": "minecraft:flat",
+  "settings": {
+   "layers": [
+    {
+     "block": "minecraft:white_wool",
+     "height": 8
+    }
+   ],
+   "biome": "minecraft:the_void",
+   "features": false,
+   "lakes": false
+  }
+ }
+}

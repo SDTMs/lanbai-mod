@@ -1,0 +1,17 @@
+{
+ "type": "lanbai:gold_land",
+ "generator": {
+  "type": "minecraft:flat",
+  "settings": {
+   "layers": [
+    {
+     "block": "minecraft:gold_block",
+     "height": 64
+    }
+   ],
+   "biome": "minecraft:the_void",
+   "features": false,
+   "lakes": false
+  }
+ }
+}

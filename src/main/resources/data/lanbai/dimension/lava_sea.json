@@ -1,0 +1,17 @@
+{
+ "type": "lanbai:lava_sea",
+ "generator": {
+  "type": "minecraft:flat",
+  "settings": {
+   "layers": [
+    {
+     "block": "minecraft:lava",
+     "height": 8
+    }
+   ],
+   "biome": "minecraft:the_void",
+   "features": false,
+   "lakes": false
+  }
+ }
+}

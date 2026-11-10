@@ -1,0 +1,17 @@
+{
+ "type": "lanbai:glass_land",
+ "generator": {
+  "type": "minecraft:flat",
+  "settings": {
+   "layers": [
+    {
+     "block": "minecraft:glass",
+     "height": 32
+    }
+   ],
+   "biome": "minecraft:the_void",
+   "features": false,
+   "lakes": false
+  }
+ }
+}

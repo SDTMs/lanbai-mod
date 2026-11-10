@@ -1,0 +1,17 @@
+{
+ "type": "lanbai:bedrock_land",
+ "generator": {
+  "type": "minecraft:flat",
+  "settings": {
+   "layers": [
+    {
+     "block": "minecraft:bedrock",
+     "height": 64
+    }
+   ],
+   "biome": "minecraft:the_void",
+   "features": false,
+   "lakes": false
+  }
+ }
+}
