@@ -1,0 +1,24 @@
+name: Nitter Instances Test
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Test instances
+        run: |
+          echo "--- xcancel.com ---"; curl -s -o /dev/null -w "%{http_code} %{time_total}s\n" --max-time 10 "https://xcancel.com/youyume0225" || echo fail
+          echo "--- nitter.poast.org ---"; curl -s -o /dev/null -w "%{http_code} %{time_total}s\n" --max-time 10 "https://nitter.poast.org/youyume0225" || echo fail
+          echo "--- nitter.privacydev.net ---"; curl -s -o /dev/null -w "%{http_code} %{time_total}s\n" --max-time 10 "https://nitter.privacydev.net/youyume0225" || echo fail
+          echo "--- nitter.tiekoetter.com ---"; curl -s -o /dev/null -w "%{http_code} %{time_total}s\n" --max-time 10 "https://nitter.tiekoetter.com/youyume0225" || echo fail
+          echo "--- nitter.space ---"; curl -s -o /dev/null -w "%{http_code} %{time_total}s\n" --max-time 10 "https://nitter.space/youyume0225" || echo fail
+          echo "--- lightbrd.com ---"; curl -s -o /dev/null -w "%{http_code} %{time_total}s\n" --max-time 10 "https://lightbrd.com/youyume0225" || echo fail
+          echo "--- nitter.woodland.cafe ---"; curl -s -o /dev/null -w "%{http_code} %{time_total}s\n" --max-time 10 "https://nitter.woodland.cafe/youyume0225" || echo fail
+          echo "--- nitter.lucabased.xyz ---"; curl -s -o /dev/null -w "%{http_code} %{time_total}s\n" --max-time 10 "https://nitter.lucabased.xyz/youyume0225" || echo fail
+          echo "--- nitter.esmailelbob.xyz ---"; curl -s -o /dev/null -w "%{http_code} %{time_total}s\n" --max-time 10 "https://nitter.esmailelbob.xyz/youyume0225" || echo fail
+          echo "--- nitter.1d4.us ---"; curl -s -o /dev/null -w "%{http_code} %{time_total}s\n" --max-time 10 "https://nitter.1d4.us/youyume0225" || echo fail
+          echo "--- nitter.kavin.rocks ---"; curl -s -o /dev/null -w "%{http_code} %{time_total}s\n" --max-time 10 "https://nitter.kavin.rocks/youyume0225" || echo fail
+          echo "--- nitter.eu ---"; curl -s -o /dev/null -w "%{http_code} %{time_total}s\n" --max-time 10 "https://nitter.eu/youyume0225" || echo fail
+          echo "--- twiiit.com ---"; curl -s -o /dev/null -w "%{http_code} %{time_total}s\n" --max-time 10 "https://twiiit.com/youyume0225" || echo fail
+          echo "--- nitter.rawbit.ninja ---"; curl -s -o /dev/null -w "%{http_code} %{time_total}s\n" --max-time 10 "https://nitter.rawbit.ninja/youyume0225" || echo fail
+          echo "--- nitter.oksocial.net ---"; curl -s -o /dev/null -w "%{http_code} %{time_total}s\n" --max-time 10 "https://nitter.oksocial.net/youyume0225" || echo fail
