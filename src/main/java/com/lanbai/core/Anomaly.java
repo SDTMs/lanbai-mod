@@ -17,6 +17,10 @@ public class Anomaly {
     public String createdBy = "system";
     /** 原著所属：B01 非人基因统合体 / B02 脑洞大爆炸 / B03 蓝白社 */
     public String book = "B00";
+    /** 发放时的物品图标 */
+    public String icon = "minecraft:paper";
+    /** 物品说明（lore，用 \n 分行） */
+    public String desc = "";
 
     public Anomaly() {
     }

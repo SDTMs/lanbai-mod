@@ -149,6 +149,8 @@ public class AnomalyLoader {
         Anomaly a = new Anomaly(id, name, target);
         a.intraConflict = o.has("intraConflict") && o.get("intraConflict").getAsBoolean();
         if (o.has("book")) a.book = o.get("book").getAsString();
+        if (o.has("icon")) a.icon = o.get("icon").getAsString();
+        if (o.has("desc")) a.desc = o.get("desc").getAsString();
 
         for (var ee : o.getAsJsonArray("effects")) {
             JsonObject eo = ee.getAsJsonObject();

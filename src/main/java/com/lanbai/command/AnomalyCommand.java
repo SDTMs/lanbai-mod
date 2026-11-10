@@ -10,12 +10,15 @@ import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.commands.Commands;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.StringTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -49,6 +52,20 @@ public class AnomalyCommand {
                         }
                         return 1;
                     }))
+                    .then(Commands.literal("give")
+                            .then(Commands.argument("target", com.mojang.brigadier.arguments.StringArgumentType.string())
+                                    .executes(ctx -> {
+                                        String arg = com.mojang.brigadier.arguments.StringArgumentType.getString(ctx, "target");
+                                        Player p = ctx.getSource().getPlayerOrException();
+                                        Anomaly a = find(arg);
+                                        if (a == null) {
+                                            ctx.getSource().sendFailure(Component.literal("§c未找到: " + arg));
+                                            return 0;
+                                        }
+                                        String msg = grant(a, p);
+                                        ctx.getSource().sendSuccess(() -> Component.literal(msg), false);
+                                        return 1;
+                                    })))
                     .then(Commands.literal("spawn")
                             .then(Commands.argument("target", com.mojang.brigadier.arguments.StringArgumentType.string())
                                     .executes(ctx -> {
@@ -107,6 +124,39 @@ public class AnomalyCommand {
                         return 1;
                     })));
         });
+    }
+
+    /**
+     * 发放收容物：生成一件带 NBT 身份的物品，手持即生效。
+     * 任意物品都能当载体（由 anomaly.icon 指定外观）。
+     */
+    static String grant(Anomaly a, Player p) {
+        Item icon = BuiltInRegistries.ITEM.get(
+                new ResourceLocation(a.icon == null || a.icon.isEmpty() ? "minecraft:paper" : a.icon));
+        if (icon == null || icon == net.minecraft.world.item.Items.AIR) {
+            icon = net.minecraft.world.item.Items.PAPER;
+        }
+        ItemStack st = new ItemStack(icon);
+        st.setHoverName(Component.literal("§6§l" + a.name));
+
+        var tag = st.getOrCreateTag();
+        tag.putString("lanbai_anomaly", a.id);
+
+        var display = st.getOrCreateTagElement("display");
+        var lore = new ListTag();
+        String body = (a.desc == null || a.desc.isEmpty())
+                ? "§7收容物 · " + a.id
+                : a.desc;
+        for (String line : body.split("\\n")) {
+            lore.add(StringTag.valueOf(Component.Serializer.toJson(
+                    Component.literal("§7" + line))));
+        }
+        lore.add(StringTag.valueOf(Component.Serializer.toJson(
+                Component.literal("§8[收容物] 手持即生效"))));
+        display.put("Lore", lore);
+
+        if (!p.getInventory().add(st)) p.drop(st, false);
+        return "§a已发放 §f" + a.name + " §7→ " + icon.getDescriptionId().replace("item.minecraft.", "");
     }
 
     /**

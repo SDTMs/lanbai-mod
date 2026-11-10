@@ -19,6 +19,7 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
@@ -109,6 +110,19 @@ public class AnomalyEvents {
         }
     }
 
+    /** 读取玩家手持/副手物品上的收容物身份证（NBT） */
+    private static String heldAnomalyId(Player p) {
+        ItemStack[] hands = {p.getMainHandItem(), p.getOffhandItem()};
+        for (ItemStack st : hands) {
+            if (st.isEmpty()) continue;
+            var tag = st.getTag();
+            if (tag != null && tag.contains("lanbai_anomaly")) {
+                return tag.getString("lanbai_anomaly");
+            }
+        }
+        return null;
+    }
+
     /**
      * 该实体此刻生效的收容物：
      *   TYPE 实体绑定 + INSTANCE 绑定 + 手持/副手物品的 ITEM 绑定。
@@ -116,6 +130,13 @@ public class AnomalyEvents {
     private static List<Anomaly> activeFor(Entity e) {
         List<Anomaly> list = new ArrayList<>(AnomalyRegistry.get().collectFor(e));
         if (e instanceof Player p) {
+            // 1) NBT 身份（/lanbai give 发放的收容物）
+            String nid = heldAnomalyId(p);
+            if (nid != null) {
+                Anomaly issued = AnomalyRegistry.get().byId(nid);
+                if (issued != null && !list.contains(issued)) list.add(issued);
+            }
+            // 2) 物品类型匹配（旧方式）
             var main = BuiltInRegistries.ITEM.getKey(p.getMainHandItem().getItem());
             var off = BuiltInRegistries.ITEM.getKey(p.getOffhandItem().getItem());
             String mm = main != null ? main.toString() : "";
@@ -374,7 +395,8 @@ public class AnomalyEvents {
                                 // TYPE 绑定：手持/副手拿着该物品即生效
                                 var main = BuiltInRegistries.ITEM.getKey(player.getMainHandItem().getItem());
                                 var off = BuiltInRegistries.ITEM.getKey(player.getOffhandItem().getItem());
-                                boolean match = (main != null && main.toString().equals(a.target.ref))
+                                boolean match = a.id.equals(heldAnomalyId(player))
+                                        || (main != null && main.toString().equals(a.target.ref))
                                         || (off != null && off.toString().equals(a.target.ref));
                                 if (match) {
                                     TriggerContext ctx = new TriggerContext(level)
