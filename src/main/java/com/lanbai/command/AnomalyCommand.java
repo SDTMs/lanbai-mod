@@ -3,6 +3,8 @@ package com.lanbai.command;
 import com.lanbai.core.Anomaly;
 import com.lanbai.core.AnomalyLoader;
 import com.lanbai.core.AnomalyRegistry;
+import com.lanbai.core.Scheduler;
+import com.lanbai.core.TagStore;
 import com.lanbai.core.effect.EffectExecutors;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.commands.Commands;
@@ -81,7 +83,9 @@ public class AnomalyCommand {
                                     })))
                     .then(Commands.literal("reload").executes(ctx -> {
                         var server = ctx.getSource().getServer();
-                        // 先把上次加在玩家身上的属性 modifier 撤掉，再重建注册表
+                        // 清掉旧状态：延迟任务、标签、属性残留
+                        Scheduler.clear();
+                        TagStore.clearAll();
                         EffectExecutors.clearAllModifiers(server);
                         AnomalyRegistry.get().clear();
                         int n = AnomalyLoader.load();

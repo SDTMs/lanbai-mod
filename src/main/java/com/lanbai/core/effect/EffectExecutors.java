@@ -1,6 +1,8 @@
 package com.lanbai.core.effect;
 
 import com.lanbai.core.Anomaly;
+import com.lanbai.core.Scheduler;
+import com.lanbai.core.TagStore;
 import com.lanbai.core.TriggerContext;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -8,6 +10,11 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.level.GameType;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
@@ -79,6 +86,31 @@ public final class EffectExecutors {
             case "ef_xp" -> xp(e, ctx);
             case "ef_dispel" -> dispel(e, ctx);
             case "ef_freeze" -> freeze(e, ctx);
+            // ---- v3：绝对特性 ----
+            case "ef_command" -> command(e, ctx);
+            case "ef_deny" -> { /* 声明式效果：由事件层查表拦截，不在这里执行 */ }
+            case "ef_gamemode" -> gamemode(e, ctx);
+            case "ef_time" -> setWorldTime(e, ctx);
+            case "ef_weather" -> setWeather(e, ctx);
+            case "ef_dimension" -> dimension(e, ctx);
+            case "ef_flight" -> flight(e, ctx);
+            case "ef_invulnerable" -> invulnerable(e, ctx);
+            case "ef_noai" -> noai(e, ctx);
+            case "ef_silence" -> silence(e, ctx);
+            case "ef_nogravity" -> nogravity(e, ctx);
+            case "ef_stop" -> stop(e, ctx);
+            case "ef_kill" -> kill(e, ctx);
+            case "ef_swap" -> swap(e, ctx);
+            case "ef_enchant" -> enchant(e, ctx);
+            case "ef_rename" -> rename(e, ctx);
+            case "ef_drop" -> drop(e, ctx);
+            case "ef_equip" -> equip(e, ctx);
+            case "ef_chain" -> chain(e, ctx);
+            case "ef_blackhole" -> blackhole(e, ctx);
+            case "ef_meteor" -> meteor(e, ctx);
+            case "ef_sound" -> sound(e, ctx);
+            case "ef_tag" -> tag(e, ctx);
+            case "ef_untag" -> untag(e, ctx);
             default -> { /* 未知效果：忽略，不中断其他效果 */ }
         }
     }
@@ -717,5 +749,286 @@ public final class EffectExecutors {
             MobEffect slow = effect("minecraft:slowness");
             if (slow != null) le.addEffect(new MobEffectInstance(slow, ticks, 2, false, false));
         }
+    }
+
+    // ==================================================================
+    // v3：绝对特性（规则层 / 实体控制 / 物品 / 战斗强化）
+    // ==================================================================
+
+    /** 执行任意原版命令。占位符：{player} {target} {x} {y} {z} */
+    private static void command(Anomaly.Effect e, TriggerContext ctx) {
+        String cmd = e.strVal("cmd", "");
+        if (cmd.isEmpty()) return;
+        MinecraftServer srv = ctx.level.getServer();
+        if (srv == null) return;
+        Entity t = ctx.target != null ? ctx.target : ctx.source;
+        String text = cmd
+                .replace("{player}", ctx.source != null ? ctx.source.getName().getString() : "@s")
+                .replace("{target}", t != null ? t.getName().getString() : "@s")
+                .replace("{x}", String.valueOf(t != null ? (int) t.getX() : 0))
+                .replace("{y}", String.valueOf(t != null ? (int) t.getY() : 0))
+                .replace("{z}", String.valueOf(t != null ? (int) t.getZ() : 0));
+        try {
+            if ("player".equals(e.strVal("as", "server"))) {
+                Player p = t instanceof Player tp ? tp : (ctx.source instanceof Player sp ? sp : null);
+                srv.getCommands().performPrefixedCommand(
+                        p != null ? p.createCommandSourceStack() : srv.createCommandSourceStack(), text);
+            } else {
+                srv.getCommands().performPrefixedCommand(srv.createCommandSourceStack(), text);
+            }
+        } catch (Exception ignored) {
+        }
+    }
+
+    private static void gamemode(Anomaly.Effect e, TriggerContext ctx) {
+        GameType gt = GameType.byName(e.strVal("mode", "adventure"));
+        if (gt == null) return;
+        for (LivingEntity le : selectTargets(e, ctx)) {
+            if (le instanceof ServerPlayer sp) sp.setGameMode(gt);
+        }
+    }
+
+    private static void setWorldTime(Anomaly.Effect e, TriggerContext ctx) {
+        String preset = e.strVal("preset", "");
+        long t = e.intVal("time", 6000);
+        if (preset.equals("day")) t = 1000;
+        else if (preset.equals("noon")) t = 6000;
+        else if (preset.equals("night")) t = 13000;
+        else if (preset.equals("midnight")) t = 18000;
+        ctx.level.setDayTime(t);
+    }
+
+    private static void setWeather(Anomaly.Effect e, TriggerContext ctx) {
+        String mode = e.strVal("mode", "clear");
+        int dur = e.intVal("duration", 6000);
+        boolean rain = mode.equals("rain") || mode.equals("thunder");
+        boolean thunder = mode.equals("thunder");
+        ctx.level.setWeatherParameters(rain ? 0 : dur, rain ? dur : 0, rain, thunder);
+    }
+
+    private static void dimension(Anomaly.Effect e, TriggerContext ctx) {
+        String dim = e.strVal("dimension", "minecraft:overworld");
+        MinecraftServer srv = ctx.level.getServer();
+        if (srv == null) return;
+        ServerLevel target = null;
+        for (ServerLevel l : srv.getAllLevels()) {
+            if (l.dimension().location().toString().equals(dim)) {
+                target = l;
+                break;
+            }
+        }
+        if (target == null) return;
+        for (LivingEntity le : selectTargets(e, ctx)) {
+            if (le instanceof ServerPlayer sp) {
+                sp.teleportTo(target, sp.getX(), sp.getY(), sp.getZ(), sp.getYRot(), sp.getXRot());
+            }
+        }
+    }
+
+    private static void flight(Anomaly.Effect e, TriggerContext ctx) {
+        boolean allow = e.val("allow", Boolean.TRUE) != Boolean.FALSE;
+        for (LivingEntity le : selectTargets(e, ctx)) {
+            if (le instanceof ServerPlayer sp) {
+                sp.getAbilities().mayfly = allow;
+                if (!allow) sp.getAbilities().flying = false;
+                sp.onUpdateAbilities();
+            }
+        }
+    }
+
+    private static void invulnerable(Anomaly.Effect e, TriggerContext ctx) {
+        boolean on = e.val("value", Boolean.TRUE) != Boolean.FALSE;
+        for (LivingEntity le : selectTargets(e, ctx)) le.setInvulnerable(on);
+    }
+
+    private static void noai(Anomaly.Effect e, TriggerContext ctx) {
+        boolean on = e.val("value", Boolean.TRUE) != Boolean.FALSE;
+        for (LivingEntity le : selectTargets(e, ctx)) {
+            if (le instanceof Mob m) m.setNoAi(on);
+        }
+    }
+
+    private static void silence(Anomaly.Effect e, TriggerContext ctx) {
+        boolean on = e.val("value", Boolean.TRUE) != Boolean.FALSE;
+        for (LivingEntity le : selectTargets(e, ctx)) le.setSilent(on);
+    }
+
+    private static void nogravity(Anomaly.Effect e, TriggerContext ctx) {
+        boolean on = e.val("value", Boolean.TRUE) != Boolean.FALSE;
+        for (LivingEntity le : selectTargets(e, ctx)) le.setNoGravity(on);
+    }
+
+    private static void stop(Anomaly.Effect e, TriggerContext ctx) {
+        for (LivingEntity le : selectTargets(e, ctx)) {
+            le.setDeltaMovement(0, 0, 0);
+            le.hurtMarked = true;
+        }
+    }
+
+    private static void kill(Anomaly.Effect e, TriggerContext ctx) {
+        for (LivingEntity le : selectTargets(e, ctx)) {
+            if (le instanceof Player) le.hurt(ctx.level.damageSources().magic(), 1.0E9F);
+            else le.kill();
+        }
+    }
+
+    private static void swap(Anomaly.Effect e, TriggerContext ctx) {
+        Entity a = ctx.source;
+        Entity b = ctx.target;
+        if (a == null || b == null || a == b) return;
+        double ax = a.getX(), ay = a.getY(), az = a.getZ();
+        double bx = b.getX(), by = b.getY(), bz = b.getZ();
+        a.teleportTo(bx, by, bz);
+        b.teleportTo(ax, ay, az);
+    }
+
+    private static void enchant(Anomaly.Effect e, TriggerContext ctx) {
+        Enchantment ench = BuiltInRegistries.ENCHANTMENT.get(
+                new ResourceLocation(e.strVal("enchantment", "minecraft:sharpness")));
+        if (ench == null) return;
+        int lvl = e.intVal("level", 5);
+        for (LivingEntity le : selectTargets(e, ctx)) {
+            if (!(le instanceof Player p)) continue;
+            ItemStack st = p.getItemInHand(InteractionHand.MAIN_HAND);
+            if (!st.isEmpty()) st.enchant(ench, lvl);
+        }
+    }
+
+    private static void rename(Anomaly.Effect e, TriggerContext ctx) {
+        String name = e.strVal("name", "无名之物");
+        for (LivingEntity le : selectTargets(e, ctx)) {
+            if (!(le instanceof Player p)) continue;
+            ItemStack st = p.getItemInHand(InteractionHand.MAIN_HAND);
+            if (!st.isEmpty()) st.setHoverName(Component.literal(name));
+        }
+    }
+
+    private static void drop(Anomaly.Effect e, TriggerContext ctx) {
+        Item it = BuiltInRegistries.ITEM.get(new ResourceLocation(e.strVal("item", "minecraft:diamond")));
+        if (it == null || it == Items.AIR) return;
+        int count = Math.max(1, Math.min(e.intVal("count", 1), 64));
+        BlockPos base = ctx.pos != null ? ctx.pos
+                : (ctx.source != null ? ctx.source.blockPosition()
+                : (ctx.target != null ? ctx.target.blockPosition() : null));
+        if (base == null) return;
+        for (int i = 0; i < count; i++) {
+            ItemStack st = new ItemStack(it, 1);
+            var ie = new net.minecraft.world.entity.item.ItemEntity(
+                    ctx.level, base.getX() + 0.5, base.getY() + 1.0, base.getZ() + 0.5, st);
+            ctx.level.addFreshEntity(ie);
+        }
+    }
+
+    private static void equip(Anomaly.Effect e, TriggerContext ctx) {
+        Item it = BuiltInRegistries.ITEM.get(new ResourceLocation(e.strVal("item", "minecraft:diamond_sword")));
+        if (it == null || it == Items.AIR) return;
+        var slot = switch (e.strVal("slot", "mainhand")) {
+            case "head" -> net.minecraft.world.entity.EquipmentSlot.HEAD;
+            case "chest" -> net.minecraft.world.entity.EquipmentSlot.CHEST;
+            case "legs" -> net.minecraft.world.entity.EquipmentSlot.LEGS;
+            case "feet" -> net.minecraft.world.entity.EquipmentSlot.FEET;
+            case "offhand" -> net.minecraft.world.entity.EquipmentSlot.OFFHAND;
+            default -> net.minecraft.world.entity.EquipmentSlot.MAINHAND;
+        };
+        for (LivingEntity le : selectTargets(e, ctx)) {
+            if (le instanceof Player p) p.setItemSlot(slot, new ItemStack(it));
+        }
+    }
+
+    /** 连锁伤害：命中目标后跳到最近的敌人，最多 hops 跳 */
+    private static void chain(Anomaly.Effect e, TriggerContext ctx) {
+        double dmg = e.doubleVal("damage", 6.0);
+        int hops = Math.max(1, Math.min(e.intVal("hops", 3), 10));
+        double range = e.doubleVal("range", 8.0);
+        Entity cur = ctx.target != null ? ctx.target : ctx.source;
+        if (cur == null) return;
+        var hit = new HashSet<UUID>();
+        hit.add(cur.getUUID());
+        for (int i = 0; i < hops; i++) {
+            if (!(cur instanceof LivingEntity le)) break;
+            le.hurt(ctx.level.damageSources().magic(), (float) dmg);
+            Entity next = null;
+            double best = range * range;
+            for (LivingEntity cand : aroundAt(ctx, cur.blockPosition(), (int) Math.ceil(range))) {
+                if (hit.contains(cand.getUUID())) continue;
+                double d2 = cand.blockPosition().distSqr(cur.blockPosition());
+                if (d2 < best) {
+                    best = d2;
+                    next = cand;
+                }
+            }
+            if (next == null) break;
+            hit.add(next.getUUID());
+            cur = next;
+        }
+    }
+
+    /** 黑洞：把范围内实体全部吸向中心 */
+    private static void blackhole(Anomaly.Effect e, TriggerContext ctx) {
+        int radius = Math.max(1, Math.min(e.intVal("radius", 16), 48));
+        double speed = e.doubleVal("speed", 3.0);
+        BlockPos center = ctx.pos != null ? ctx.pos
+                : (ctx.source != null ? ctx.source.blockPosition() : null);
+        if (center == null) return;
+        for (LivingEntity le : aroundAt(ctx, center, radius)) {
+            if (!accept(e, le)) continue;
+            double dx = center.getX() + 0.5 - le.getX();
+            double dy = center.getY() + 0.5 - le.getY();
+            double dz = center.getZ() + 0.5 - le.getZ();
+            double len = Math.max(0.01, Math.sqrt(dx * dx + dy * dy + dz * dz));
+            le.setDeltaMovement(dx / len * speed, dy / len * speed, dz / len * speed);
+            le.hurtMarked = true;
+        }
+    }
+
+    /** 流星雨：范围内随机点生成火球 + 落地伤害 */
+    private static void meteor(Anomaly.Effect e, TriggerContext ctx) {
+        int radius = Math.max(1, Math.min(e.intVal("radius", 12), 32));
+        int count = Math.max(1, Math.min(e.intVal("count", 8), 40));
+        BlockPos base = ctx.pos != null ? ctx.pos
+                : (ctx.target != null ? ctx.target.blockPosition()
+                : (ctx.source != null ? ctx.source.blockPosition() : null));
+        if (base == null) return;
+        var rng = ctx.level.random;
+        var type = BuiltInRegistries.ENTITY_TYPE.get(new ResourceLocation("minecraft:fireball"));
+        for (int i = 0; i < count; i++) {
+            int dx = rng.nextInt(radius * 2 + 1) - radius;
+            int dz = rng.nextInt(radius * 2 + 1) - radius;
+            BlockPos p = base.offset(dx, 0, dz);
+            if (type != null) {
+                Entity fb = type.create(ctx.level);
+                if (fb != null) {
+                    fb.moveTo(p.getX() + 0.5, p.getY() + 15.0, p.getZ() + 0.5);
+                    fb.setDeltaMovement(0, -1.2, 0);
+                    ctx.level.addFreshEntity(fb);
+                }
+            }
+            for (LivingEntity le : aroundAt(ctx, p, 2)) {
+                if (accept(e, le)) le.hurt(ctx.level.damageSources().magic(), 6.0F);
+            }
+        }
+    }
+
+    private static void sound(Anomaly.Effect e, TriggerContext ctx) {
+        var se = BuiltInRegistries.SOUND_EVENT.get(new ResourceLocation(e.strVal("sound", "minecraft:entity.wither.spawn")));
+        if (se == null) return;
+        BlockPos base = ctx.pos != null ? ctx.pos
+                : (ctx.source != null ? ctx.source.blockPosition() : null);
+        if (base == null) return;
+        ctx.level.playSound(null, base.getX(), base.getY(), base.getZ(), se,
+                net.minecraft.sounds.SoundSource.MASTER,
+                (float) e.doubleVal("volume", 1.0), (float) e.doubleVal("pitch", 1.0));
+    }
+
+    private static void tag(Anomaly.Effect e, TriggerContext ctx) {
+        String key = e.strVal("tag", "marked");
+        int ttl = e.intVal("ttl", 0);
+        long exp = ttl > 0 ? Scheduler.now() + ttl : 0L;
+        for (LivingEntity le : selectTargets(e, ctx)) TagStore.add(le.getUUID(), key, exp);
+    }
+
+    private static void untag(Anomaly.Effect e, TriggerContext ctx) {
+        String key = e.strVal("tag", "marked");
+        for (LivingEntity le : selectTargets(e, ctx)) TagStore.remove(le.getUUID(), key);
     }
 }

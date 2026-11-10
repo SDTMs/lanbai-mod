@@ -62,7 +62,7 @@ public class AnomalyEvents {
                 if (matches.isEmpty()) continue;
                 List<Anomaly.Effect> finalList = engine.resolveIntra(a, matches, ctx);
                 for (Anomaly.Effect e : finalList) {
-                    runOne(a, e, ctx, feedbackTo);
+                    fire(a, e, ctx, feedbackTo);
                 }
             }
         } finally {
@@ -75,7 +75,7 @@ public class AnomalyEvents {
         if (anomalies == null || anomalies.isEmpty()) return;
         for (Anomaly a : anomalies) {
             for (Anomaly.Effect e : a.effects) {
-                if (e.trigger == null) runOne(a, e, ctx, feedbackTo);
+                if (e.trigger == null) fire(a, e, ctx, feedbackTo);
             }
         }
     }
@@ -93,9 +93,35 @@ public class AnomalyEvents {
                 int period = e.intVal("period", 0);
                 if (period <= 0) continue;
                 if (tickCounter % Math.max(10, period) != 0) continue;
-                runOne(a, e, ctx, feedbackTo);
+                fire(a, e, ctx, feedbackTo);
             }
         }
+    }
+
+    /** 执行前检查条件与延迟 */
+    private void fire(Anomaly a, Anomaly.Effect e, TriggerContext ctx, Player feedbackTo) {
+        if (!ConditionChecker.check(e.when, ctx)) return;
+        if (e.delay > 0) {
+            Scheduler.schedule(e.delay, () -> runOne(a, e, ctx, feedbackTo));
+        } else {
+            runOne(a, e, ctx, feedbackTo);
+        }
+    }
+
+    /**
+     * 声明式否决检查：实体身上若有 ef_deny 且 type 匹配，该行为直接被拦下。
+     * 这是「绝对特性」的核心——不需要触发，绑定即生效。
+     */
+    private static boolean denied(Entity entity, String type) {
+        if (entity == null) return false;
+        for (Anomaly a : AnomalyRegistry.get().collectFor(entity)) {
+            for (Anomaly.Effect ef : a.effects) {
+                if (!"ef_deny".equals(ef.id)) continue;
+                String t = ef.strVal("type", "all");
+                if (t.equals("all") || t.equals(type)) return true;
+            }
+        }
+        return false;
     }
 
     private void runOne(Anomaly a, Anomaly.Effect e, TriggerContext ctx, Player feedbackTo) {
@@ -178,6 +204,7 @@ public class AnomalyEvents {
     private void hook() {
         UseEntityCallback.EVENT.register((player, world, hand, entity, hitResult) -> {
             if (!(world instanceof ServerLevel level)) return InteractionResult.PASS;
+            if (denied(player, "interact")) return InteractionResult.FAIL;
             TriggerContext ctx = new TriggerContext(level)
                     .source(player).target(entity).item(player.getItemInHand(hand));
             dispatch(level, ctx, AnomalyRegistry.get().collectFor(entity),
@@ -188,6 +215,7 @@ public class AnomalyEvents {
         // 右键方块：方块 + 手持物都能触发
         UseBlockCallback.EVENT.register((player, world, hand, hitResult) -> {
             if (!(world instanceof ServerLevel level)) return InteractionResult.PASS;
+            if (denied(player, "interact")) return InteractionResult.FAIL;
             BlockPos pos = hitResult.getBlockPos();
             TriggerContext ctx = new TriggerContext(level)
                     .source(player).target(player).pos(pos).item(player.getItemInHand(hand));
@@ -208,7 +236,16 @@ public class AnomalyEvents {
 
         PlayerBlockBreakEvents.BEFORE.register((world, player, pos, state, blockEntity) -> {
             if (!(world instanceof ServerLevel level)) return true;
+            if (denied(player, "break")) return false;
             List<Anomaly> list = AnomalyRegistry.get().getBlockAnomalies(pos);
+            for (Anomaly ba : list) {
+                for (Anomaly.Effect be : ba.effects) {
+                    if ("ef_deny".equals(be.id)) {
+                        String bt = be.strVal("type", "all");
+                        if (bt.equals("all") || bt.equals("break")) return false;
+                    }
+                }
+            }
             if (list.isEmpty()) return true;
             for (Anomaly a : list) {
                 if (a.target != null && a.target.persistent) {
@@ -230,6 +267,7 @@ public class AnomalyEvents {
         });
 
         ServerLivingEntityEvents.ALLOW_DAMAGE.register((entity, source, amount) -> {
+            if (denied(entity, "damage")) return false;
             if (!(entity.level() instanceof ServerLevel level)) return true;
             TriggerContext ctx = new TriggerContext(level)
                     .source(source.getEntity()).target(entity);
@@ -248,6 +286,8 @@ public class AnomalyEvents {
             return true;
         });
 
+        ServerLivingEntityEvents.ALLOW_DEATH.register((entity, source, amount) -> !denied(entity, "death"));
+
         ServerLivingEntityEvents.AFTER_DEATH.register((entity, source) -> {
             if (!(entity.level() instanceof ServerLevel level)) return;
             TriggerContext ctx = new TriggerContext(level)
@@ -257,8 +297,11 @@ public class AnomalyEvents {
         });
 
         ServerTickEvents.END_SERVER_TICK.register(server -> {
+            Scheduler.tick();
             tickCounter++;
             if (tickCounter % 10 != 0) return;
+
+            if (tickCounter % 200 == 0) TagStore.cleanup();
 
             var players = server.getPlayerList().getPlayers();
             var all = new ArrayList<>(AnomalyRegistry.get().all());

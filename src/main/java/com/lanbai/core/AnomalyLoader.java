@@ -12,6 +12,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -188,6 +189,15 @@ public class AnomalyLoader {
             if (eo.has("depth")) e.depth = eo.get("depth").getAsLong();
             else if (o.has("depth")) e.depth = o.get("depth").getAsLong();
             if (e.depth == 0) e.depth = AnomalyRegistry.get().allocateDepth(1000, 999_999_999L);
+
+            if (eo.has("delay")) e.delay = eo.get("delay").getAsInt();
+            if (eo.has("when") && eo.get("when").isJsonObject()) {
+                Map<String, Object> w = new HashMap<>();
+                for (Map.Entry<String, com.google.gson.JsonElement> en : eo.getAsJsonObject("when").entrySet()) {
+                    w.put(en.getKey(), toJava(en.getValue()));
+                }
+                e.when = w;
+            }
 
             if (eo.has("fidelity")) e.fidelity = eo.get("fidelity").getAsString();
             if (eo.has("conflictGroup")) e.conflictGroup = eo.get("conflictGroup").getAsString();

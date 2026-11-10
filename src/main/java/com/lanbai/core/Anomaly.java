@@ -72,6 +72,10 @@ public class Anomaly {
         /** null 表示纯被动 */
         public TriggerSpec trigger;
         public Map<String, EffectParam> params = new HashMap<>();
+        /** 执行前置条件（hp_below / has_tag / time / random / ...），null 表示无条件 */
+        public Map<String, Object> when;
+        /** 延迟执行（tick），0 表示立即 */
+        public int delay = 0;
         public long depth;
         public String conflictGroup;
         /** 还原程度：FULL / PARTIAL / REDUCED */
@@ -135,6 +139,16 @@ public class Anomaly {
 
         public Effect withDepth(long d) {
             this.depth = d;
+            return this;
+        }
+
+        public Effect withDelay(int ticks) {
+            this.delay = ticks;
+            return this;
+        }
+
+        public Effect when(Map<String, Object> cond) {
+            this.when = cond;
             return this;
         }
 
