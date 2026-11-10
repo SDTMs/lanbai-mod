@@ -30,6 +30,9 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.phys.AABB;
 
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -111,6 +114,13 @@ public final class EffectExecutors {
             case "ef_sound" -> sound(e, ctx);
             case "ef_tag" -> tag(e, ctx);
             case "ef_untag" -> untag(e, ctx);
+            // ---- v4：视角 / 动作 / 重力 / 数据包 ----
+            case "ef_camera" -> camera(e, ctx);
+            case "ef_force_look" -> forceLook(e, ctx);
+            case "ef_action" -> action(e, ctx);
+            case "ef_gravity" -> gravity(e, ctx);
+            case "ef_loot" -> loot(e, ctx);
+            case "ef_datapack" -> datapack(e, ctx);
             default -> { /* 未知效果：忽略，不中断其他效果 */ }
         }
     }
@@ -1030,5 +1040,169 @@ public final class EffectExecutors {
     private static void untag(Anomaly.Effect e, TriggerContext ctx) {
         String key = e.strVal("tag", "marked");
         for (LivingEntity le : selectTargets(e, ctx)) TagStore.remove(le.getUUID(), key);
+    }
+
+    // ==================================================================
+    // v4：视角 / 玩家动作 / 重力 / 数据包（合成表、掉落表、函数）
+    // ==================================================================
+
+    /** 视角附身：把玩家摄像机挂到目标实体上（旁观者式附身） */
+    private static void camera(Anomaly.Effect e, TriggerContext ctx) {
+        Entity cam = ctx.target;
+        boolean reset = "reset".equals(e.strVal("mode", "attach"));
+        for (LivingEntity le : selectTargets(e, ctx)) {
+            if (!(le instanceof ServerPlayer sp)) continue;
+            if (reset) sp.setCamera(sp);
+            else if (cam != null && cam != sp) sp.setCamera(cam);
+        }
+    }
+
+    /**
+     * 强制朝向：把玩家视角扳向目标（或指定坐标）。
+     * 用 connection.teleport 同步，否则客户端不跟。
+     */
+    private static void forceLook(Anomaly.Effect e, TriggerContext ctx) {
+        Entity look = ctx.target != null ? ctx.target : ctx.source;
+        boolean usePos = e.param("x") != null;
+        double tx = e.doubleVal("x", 0);
+        double ty = e.doubleVal("y", 0);
+        double tz = e.doubleVal("z", 0);
+
+        for (LivingEntity le : selectTargets(e, ctx)) {
+            if (!(le instanceof ServerPlayer sp)) continue;
+            double dx, dy, dz;
+            if (usePos) {
+                dx = tx - sp.getX();
+                dy = ty - sp.getEyeY();
+                dz = tz - sp.getZ();
+            } else {
+                if (look == null || look == sp) continue;
+                dx = look.getX() - sp.getX();
+                dy = look.getEyeY() - sp.getEyeY();
+                dz = look.getZ() - sp.getZ();
+            }
+            double dist = Math.sqrt(dx * dx + dz * dz);
+            float yaw = (float) (Math.toDegrees(Math.atan2(dz, dx)) - 90.0);
+            float pitch = (float) (-Math.toDegrees(Math.atan2(dy, dist)));
+            sp.setYRot(yaw);
+            sp.setXRot(pitch);
+            sp.connection.teleport(sp.getX(), sp.getY(), sp.getZ(), yaw, pitch);
+        }
+    }
+
+    /**
+     * 强制玩家动作：
+     *   action: drop / sneak / stand / jump / swing / attack / walk / use
+     */
+    private static void action(Anomaly.Effect e, TriggerContext ctx) {
+        String act = e.strVal("action", "drop");
+        double power = e.doubleVal("power", 0.5);
+        for (LivingEntity le : selectTargets(e, ctx)) {
+            if (!(le instanceof ServerPlayer sp)) continue;
+            switch (act) {
+                case "drop" -> sp.drop(true);
+                case "sneak" -> sp.setShiftKeyDown(true);
+                case "stand" -> sp.setShiftKeyDown(false);
+                case "jump" -> {
+                    var mv = sp.getDeltaMovement();
+                    sp.setDeltaMovement(mv.x, 0.42, mv.z);
+                    sp.hurtMarked = true;
+                }
+                case "swing" -> sp.swing(InteractionHand.MAIN_HAND);
+                case "attack" -> {
+                    if (ctx.target != null && ctx.target != sp) sp.attack(ctx.target);
+                }
+                case "walk" -> {
+                    double yaw = Math.toRadians(sp.getYRot());
+                    sp.setDeltaMovement(-Math.sin(yaw) * power, sp.getDeltaMovement().y, Math.cos(yaw) * power);
+                    sp.hurtMarked = true;
+                }
+                case "use" -> sp.swing(InteractionHand.MAIN_HAND);
+                default -> {
+                }
+            }
+        }
+    }
+
+    /**
+     * 重力：factor 0=失重 / 0.5=半重力 / 1=正常 / 2=双倍。
+     * 实现方式：关掉原版重力，每 tick 手动补一个等效加速度（近似）。
+     */
+    private static void gravity(Anomaly.Effect e, TriggerContext ctx) {
+        double factor = e.doubleVal("factor", 1.0);
+        for (LivingEntity le : selectTargets(e, ctx)) {
+            if (factor <= 0.001) {
+                le.setNoGravity(true);
+                le.setDeltaMovement(le.getDeltaMovement().x, le.getDeltaMovement().y * 0.9, le.getDeltaMovement().z);
+            } else {
+                le.setNoGravity(true);
+                var mv = le.getDeltaMovement();
+                le.setDeltaMovement(mv.x, mv.y - 0.08 * factor, mv.z);
+            }
+            le.hurtMarked = true;
+        }
+    }
+
+    /** 掉落物：在目标位置/方块位置生成掉落 */
+    private static void loot(Anomaly.Effect e, TriggerContext ctx) {
+        Entity t = ctx.target != null ? ctx.target : ctx.source;
+        BlockPos base = ctx.pos != null ? ctx.pos : (t != null ? t.blockPosition() : null);
+        if (base == null) return;
+        String[] items = e.strVal("items", e.strVal("item", "minecraft:diamond")).split(",");
+        for (String raw : items) {
+            String[] p = raw.trim().split(":");
+            if (p.length < 2) continue;
+            String itemId = p[0] + ":" + p[1];
+            int count = p.length > 2 ? parseIntSafe(p[2], 1) : e.intVal("count", 1);
+            Item it = BuiltInRegistries.ITEM.get(new ResourceLocation(itemId));
+            if (it == null || it == Items.AIR) continue;
+            for (int i = 0; i < Math.max(1, Math.min(count, 64)); i++) {
+                var ie = new net.minecraft.world.entity.item.ItemEntity(
+                        ctx.level, base.getX() + 0.5, base.getY() + 1.0, base.getZ() + 0.5, new ItemStack(it, 1));
+                ctx.level.addFreshEntity(ie);
+            }
+        }
+    }
+
+    /**
+     * 数据包写入：这是改「合成表 / 掉落表 / 函数 / 标签 / 进度」的万能入口。
+     * path 相对 datapacks/lanbai/data/ ，例如：
+     *   recipes/my_recipe.json
+     *   loot_tables/blocks/stone.json
+     *   functions/tick.mcfunction
+     * 写完自动 /reload。
+     */
+    private static void datapack(Anomaly.Effect e, TriggerContext ctx) {
+        MinecraftServer srv = ctx.level.getServer();
+        if (srv == null) return;
+        String rel = e.strVal("path", "");
+        String content = e.strVal("json", e.strVal("content", ""));
+        if (rel.isEmpty() || content.isEmpty()) return;
+        if (rel.contains("..")) return;
+        try {
+            Path root = srv.getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT)
+                    .resolve("datapacks").resolve("lanbai").resolve("data");
+            Path file = root.resolve(rel).normalize();
+            if (!file.startsWith(root)) return;
+            Files.createDirectories(file.getParent());
+            Files.writeString(file, content, StandardCharsets.UTF_8);
+            // 确保 pack.mcmeta 存在
+            Path meta = root.getParent().resolve("pack.mcmeta");
+            if (!Files.exists(meta)) {
+                Files.writeString(meta,
+                        "{\"pack\":{\"pack_format\":15,\"description\":\"LanBai\"}}",
+                        StandardCharsets.UTF_8);
+            }
+            srv.getCommands().performPrefixedCommand(srv.createCommandSourceStack(), "reload");
+        } catch (Exception ignored) {
+        }
+    }
+
+    private static int parseIntSafe(String s, int def) {
+        try {
+            return Integer.parseInt(s.trim());
+        } catch (Exception ex) {
+            return def;
+        }
     }
 }
