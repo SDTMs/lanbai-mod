@@ -5,6 +5,7 @@ import com.lanbai.core.AnomalyLoader;
 import com.lanbai.core.AnomalyRegistry;
 import com.lanbai.core.Scheduler;
 import com.lanbai.core.TagStore;
+import com.lanbai.core.WishQueue;
 import com.lanbai.core.effect.EffectExecutors;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.commands.Commands;
@@ -53,6 +54,18 @@ public class AnomalyCommand {
                         }
                         return 1;
                     }))
+                    .then(Commands.literal("wish")
+                            .then(Commands.argument("text", com.mojang.brigadier.arguments.StringArgumentType.greedyString())
+                                    .executes(ctx -> {
+                                        String text = com.mojang.brigadier.arguments.StringArgumentType.getString(ctx, "text");
+                                        Player p = ctx.getSource().getPlayerOrException();
+                                        WishQueue.add(p.getName().getString(), text);
+                                        ctx.getSource().sendSuccess(() -> Component.literal(
+                                                "§a[AI] 许愿已提交，等生成完成后用 /lanbai give 领取"), false);
+                                        ctx.getSource().sendSuccess(() -> Component.literal(
+                                                "§7内容: §f" + text), false);
+                                        return 1;
+                                    })))
                     .then(Commands.literal("gift")
                             .then(Commands.argument("player", com.mojang.brigadier.arguments.StringArgumentType.string())
                                     .then(Commands.argument("target", com.mojang.brigadier.arguments.StringArgumentType.string())
