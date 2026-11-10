@@ -66,6 +66,38 @@ public final class ConditionChecker {
             }
             case "dimension":
                 return ctx.level.dimension().location().toString().equals(String.valueOf(v));
+            case "falling":
+                return t != null && t.getDeltaMovement().y < -0.08 && !t.onGround();
+            case "on_fire":
+                return t instanceof LivingEntity le && le.isOnFire();
+            case "in_water":
+                return t instanceof LivingEntity le && le.isInWater();
+            case "sprinting":
+                return t instanceof Player p && p.isSprinting();
+            case "hp_ratio_above":
+                return t instanceof LivingEntity le && le.getMaxHealth() > 0
+                        && (le.getHealth() / le.getMaxHealth()) > num(v, 0);
+            case "y_below":
+                return t != null && t.getY() < num(v, 0);
+            case "y_above":
+                return t != null && t.getY() > num(v, 0);
+            case "light_below":
+                return t != null && ctx.level.getMaxLocalRawBrightness(t.blockPosition()) < num(v, 8);
+            case "gamemode":
+                return t instanceof net.minecraft.server.level.ServerPlayer sp
+                        && sp.gameMode.getGameModeForPlayer().getName().equals(String.valueOf(v));
+            case "holding": {
+                if (!(t instanceof Player p)) return false;
+                var key = net.minecraft.core.registries.BuiltInRegistries.ITEM
+                        .getKey(p.getMainHandItem().getItem());
+                return key != null && key.toString().equals(String.valueOf(v));
+            }
+            case "block_below": {
+                if (t == null) return false;
+                var key = net.minecraft.core.registries.BuiltInRegistries.BLOCK
+                        .getKey(ctx.level.getBlockState(t.blockPosition().below()).getBlock());
+                return key != null && key.toString().equals(String.valueOf(v));
+            }
             default:
                 return true;
         }

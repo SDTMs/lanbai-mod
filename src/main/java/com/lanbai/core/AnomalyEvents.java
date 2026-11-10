@@ -8,6 +8,7 @@ import net.fabricmc.fabric.api.event.player.AttackEntityCallback;
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.fabricmc.fabric.api.event.player.UseEntityCallback;
+import net.fabricmc.fabric.api.message.v1.ServerMessageEvents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
@@ -279,6 +280,14 @@ public class AnomalyEvents {
             TriggerContext ctx = new TriggerContext(level).source(player).pos(pos);
             dispatch(level, ctx, list, fired("on_break", "on_hit_block"), player);
             return true;
+        });
+
+        ServerMessageEvents.CHAT_MESSAGE.register((message, sender, params) -> {
+            if (sender.level() instanceof ServerLevel level) {
+                TriggerContext ctx = new TriggerContext(level).source(sender).target(sender);
+                ctx.put("message", message.getString());
+                dispatch(level, ctx, activeFor(sender), fired("on_chat"), sender);
+            }
         });
 
         ServerEntityEvents.ENTITY_LOAD.register((entity, world) -> {

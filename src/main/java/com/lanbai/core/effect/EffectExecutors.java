@@ -130,6 +130,7 @@ public final class EffectExecutors {
             case "ef_invisible" -> invisible(e, ctx);
             case "ef_health" -> health(e, ctx);
             case "ef_food" -> food(e, ctx);
+            case "ef_structure" -> structure(e, ctx);
             default -> { /* 未知效果：忽略，不中断其他效果 */ }
         }
     }
@@ -1292,6 +1293,22 @@ public final class EffectExecutors {
         int level = Math.max(0, Math.min(e.intVal("level", 20), 20));
         for (LivingEntity le : selectTargets(e, ctx)) {
             if (le instanceof Player p) p.getFoodData().setFoodLevel(level);
+        }
+    }
+
+    /** 结构生成：place structure 命令 */
+    private static void structure(Anomaly.Effect e, TriggerContext ctx) {
+        MinecraftServer srv = ctx.level.getServer();
+        if (srv == null) return;
+        BlockPos base = ctx.pos != null ? ctx.pos
+                : (ctx.target != null ? ctx.target.blockPosition()
+                : (ctx.source != null ? ctx.source.blockPosition() : null));
+        if (base == null) return;
+        String id = e.strVal("structure", "minecraft:village_plains");
+        String cmd = "place structure " + id + " " + base.getX() + " " + base.getY() + " " + base.getZ();
+        try {
+            srv.getCommands().performPrefixedCommand(srv.createCommandSourceStack(), cmd);
+        } catch (Exception ignored) {
         }
     }
 }
