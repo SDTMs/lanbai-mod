@@ -2133,8 +2133,8 @@
   "id": "b05_creaking",
   "name": "嘎吱怪",
   "book": "V1.21.4",
-  "icon": "minecraft:oak_log",
-  "desc": "§71.21.4\n§7只有被注视时才行动\n§8[替身] 僵尸 + 禁 AI",
+  "icon": "minecraft:zombie_spawn_egg",
+  "desc": "§71.21.4\n§7放下刷怪蛋召唤嘎吱怪（僵尸替身，禁 AI）\n§8[已改刷怪蛋]",
   "bindTarget": {
    "scope": "TYPE",
    "kind": "ITEM",
@@ -2195,7 +2195,7 @@
   "name": "钻石大陆传送门",
   "book": "CUSTOM",
   "icon": "minecraft:flint_and_steel",
-  "desc": "§7用钻石块搭成地狱门形状（4×5）\n§7然后点火\n§8[结构检测] 验证原子化形状判定",
+  "desc": "§7钻石块搭 4×5 门框后点火\n§7会生成紫色传送门并通到钻石大陆\n§8[结构检测+传送门方块]",
   "bindTarget": {
    "scope": "TYPE",
    "kind": "ITEM",
@@ -2219,6 +2219,25 @@
     "when": {
      "structure": "minecraft:diamond_block|4x5"
     }
+   },
+   {
+    "id": "ef_portal",
+    "params": {
+     "frame": "minecraft:diamond_block",
+     "portal": "minecraft:nether_portal",
+     "width": 4,
+     "height": 5
+    },
+    "trigger": {
+     "conditions": [
+      "on_use_block"
+     ],
+     "mode": "OR"
+    },
+    "when": {
+     "structure": "minecraft:diamond_block|4x5"
+    },
+    "depth": 60001
    },
    {
     "id": "ef_dimension",

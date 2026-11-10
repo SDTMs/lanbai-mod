@@ -120,7 +120,7 @@ public final class ConditionChecker {
     }
 
     /** 检测以 pos 为左下角的 w×h 门框：边框是 block，内部是空气 */
-    private static boolean frameMatches(TriggerContext ctx, net.minecraft.world.level.block.Block want,
+    public static boolean frameMatches(TriggerContext ctx, net.minecraft.world.level.block.Block want,
                                         int w, int h, boolean alongX) {
         var level = ctx.level;
         for (int i = 0; i < w; i++) {

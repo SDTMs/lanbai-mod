@@ -137,6 +137,7 @@ public final class EffectExecutors {
             case "ef_gravity_dir" -> gravityDir(e, ctx);
             case "ef_view_flip" -> viewFlip(e, ctx);
             case "ef_input_flip" -> inputFlip(e, ctx);
+            case "ef_portal" -> portal(e, ctx);
             default -> { /* 未知效果：忽略，不中断其他效果 */ }
         }
     }
@@ -383,7 +384,8 @@ public final class EffectExecutors {
     private static void push(Anomaly.Effect e, TriggerContext ctx) {
         double power = e.doubleVal("power", 1.5);
         for (LivingEntity t : selectTargets(e, ctx)) {
-            if (ctx.source != null && ctx.source != t) {
+            if (t == ctx.source) continue;   // 不推自己
+            if (ctx.source != null) {
                 double dx = t.getX() - ctx.source.getX();
                 double dz = t.getZ() - ctx.source.getZ();
                 double len = Math.max(0.01, Math.sqrt(dx * dx + dz * dz));
@@ -701,6 +703,7 @@ public final class EffectExecutors {
         double power = e.doubleVal("power", 1.5);
         String dir = e.strVal("direction", "up");
         for (LivingEntity t : selectTargets(e, ctx)) {
+            if (t == ctx.source) continue;   // 不推自己
             if (dir.equals("forward") && ctx.source != null) {
                 double yaw = Math.toRadians(ctx.source.getYRot());
                 double dx = -Math.sin(yaw) * power;
@@ -1455,6 +1458,31 @@ public final class EffectExecutors {
         for (LivingEntity le : selectTargets(e, ctx)) {
             if (on) TagStore.add(le.getUUID(), "lanbai:iflip", 0);
             else TagStore.remove(le.getUUID(), "lanbai:iflip");
+        }
+    }
+
+    /**
+     * 点燃传送门：在 ctx.pos 附近找 4x5 门框，把内部 2x3 填成传送门方块。
+     * 这是「钻石门」真正生成紫色传送门的关键。
+     */
+    private static void portal(Anomaly.Effect e, TriggerContext ctx) {
+        if (ctx.pos == null) return;
+        Block frame = BuiltInRegistries.BLOCK.get(
+                new ResourceLocation(e.strVal("frame", "minecraft:diamond_block")));
+        Block portal = BuiltInRegistries.BLOCK.get(
+                new ResourceLocation(e.strVal("portal", "minecraft:nether_portal")));
+        if (frame == null || portal == null) return;
+        int w = e.intVal("width", 4);
+        int h = e.intVal("height", 5);
+        for (boolean alongX : new boolean[]{true, false}) {
+            if (!com.lanbai.core.ConditionChecker.frameMatches(ctx, frame, w, h, alongX)) continue;
+            for (int i = 1; i < w - 1; i++) {
+                for (int j = 1; j < h - 1; j++) {
+                    var p = alongX ? ctx.pos.offset(i, j, 0) : ctx.pos.offset(0, j, i);
+                    ctx.level.setBlockAndUpdate(p, portal.defaultBlockState());
+                }
+            }
+            return;
         }
     }
 }
