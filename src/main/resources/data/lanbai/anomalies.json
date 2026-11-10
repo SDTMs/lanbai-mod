@@ -2396,5 +2396,398 @@
   ],
   "intraConflict": false,
   "depth": 60000
+ },
+ {
+  "id": "b07_fast_zombie",
+  "name": "速度异常快的僵尸",
+  "book": [
+   {
+    "id": "ef_summon",
+    "params": {
+     "entity": "minecraft:zombie",
+     "count": 1,
+     "spread": 2,
+     "health": 20,
+     "damage": 5,
+     "speed": 0.6,
+     "name": "§c迅捷尸"
+    },
+    "trigger": {
+     "conditions": [
+      "on_use"
+     ],
+     "mode": "OR"
+    }
+   }
+  ],
+  "icon": "minecraft:zombie_spawn_egg",
+  "desc": "§7实体类绝对特性\n§7召唤速度 0.6、血量 20 的僵尸",
+  "bindTarget": "绝对特性",
+  "effects": {
+   "scope": "TYPE",
+   "kind": "ITEM",
+   "ref": "minecraft:zombie_spawn_egg",
+   "persistent": false
+  },
+  "intraConflict": false
+ },
+ {
+  "id": "b07_stick_lift",
+  "name": "抬升木棍",
+  "book": [
+   {
+    "id": "ef_move_block",
+    "params": {
+     "dy": 1
+    },
+    "trigger": {
+     "conditions": [
+      "on_use_block"
+     ],
+     "mode": "OR"
+    }
+   }
+  ],
+  "icon": "minecraft:stick",
+  "desc": "§7物品类绝对特性\n§7右键方块把它向上抬一格",
+  "bindTarget": "绝对特性",
+  "effects": {
+   "scope": "TYPE",
+   "kind": "ITEM",
+   "ref": "minecraft:stick",
+   "persistent": false
+  },
+  "intraConflict": false
+ },
+ {
+  "id": "b07_end_float",
+  "name": "末地漂浮",
+  "book": [
+   {
+    "id": "ef_gravity",
+    "params": {
+     "factor": 0.0,
+     "selector": "around",
+     "radius": 128,
+     "targetFilter": "all"
+    },
+    "period": 20
+   }
+  ],
+  "icon": "minecraft:end_stone",
+  "desc": "§7维度级绝对特性\n§7末地内所有实体失重",
+  "bindTarget": "绝对特性",
+  "effects": {
+   "scope": "TYPE",
+   "kind": "DIMENSION",
+   "ref": "minecraft:the_end",
+   "persistent": false
+  },
+  "intraConflict": false
+ },
+ {
+  "id": "b07_stone_marker",
+  "name": "坐标留存",
+  "book": [
+   {
+    "id": "ef_set_block",
+    "params": {
+     "block": "minecraft:stone"
+    },
+    "period": 100
+   },
+   {
+    "id": "ef_deny",
+    "params": {
+     "type": "break"
+    }
+   }
+  ],
+  "icon": "minecraft:stone",
+  "desc": "§7坐标级绝对特性\n§7指定坐标永远留下一块石头",
+  "bindTarget": "绝对特性",
+  "effects": {
+   "scope": "INSTANCE",
+   "kind": "POS",
+   "ref": "minecraft:overworld;0,64,0",
+   "persistent": true
+  },
+  "intraConflict": false
+ },
+ {
+  "id": "b07_gravity_box",
+  "name": "区域重力反转",
+  "book": [
+   {
+    "id": "ef_gravity_dir",
+    "params": {
+     "direction": "up",
+     "selector": "box",
+     "x1": -5,
+     "y1": -5,
+     "z1": -5,
+     "x2": 5,
+     "y2": 5,
+     "z2": 5,
+     "targetFilter": "all"
+    },
+    "period": 10
+   }
+  ],
+  "icon": "minecraft:shulker_shell",
+  "desc": "§7区域级绝对特性\n§7以自身为中心 5 格内重力反转",
+  "bindTarget": "绝对特性",
+  "effects": {
+   "scope": "INSTANCE",
+   "kind": "BLOCK",
+   "ref": "minecraft:overworld;0,64,0",
+   "persistent": false
+  },
+  "intraConflict": false
+ },
+ {
+  "id": "b07_sneak_jump",
+  "name": "空中三段跳",
+  "book": [
+   {
+    "id": "ef_launch",
+    "params": {
+     "power": 0.42,
+     "direction": "up",
+     "selector": "source",
+     "targetFilter": "player"
+    },
+    "trigger": {
+     "conditions": [
+      "on_sneak"
+     ],
+     "mode": "OR"
+    }
+   }
+  ],
+  "icon": "minecraft:rabbit_foot",
+  "desc": "§7行为级绝对特性\n§7在空中潜行即可再跳一次",
+  "bindTarget": "绝对特性",
+  "effects": {
+   "scope": "TYPE",
+   "kind": "ITEM",
+   "ref": "minecraft:rabbit_foot",
+   "persistent": false
+  },
+  "intraConflict": false
+ },
+ {
+  "id": "b07_record_sword",
+  "name": "记忆之剑",
+  "book": [
+   {
+    "id": "ef_record",
+    "params": {
+     "record": "memory_sword",
+     "selector": "target"
+    },
+    "trigger": {
+     "conditions": [
+      "on_attack"
+     ],
+     "mode": "OR"
+    }
+   },
+   {
+    "id": "ef_recall",
+    "params": {
+     "record": "memory_sword",
+     "damage": 6.0
+    },
+    "trigger": {
+     "conditions": [
+      "on_attack"
+     ],
+     "mode": "OR"
+    }
+   }
+  ],
+  "icon": "minecraft:diamond_sword",
+  "desc": "§7伤害记录特性\n§7被它伤过的实体永久记账\n§7之后每次攻击，所有被记录者都会再挨一次",
+  "bindTarget": "绝对特性",
+  "effects": {
+   "scope": "TYPE",
+   "kind": "ITEM",
+   "ref": "minecraft:diamond_sword",
+   "persistent": false
+  },
+  "intraConflict": false
+ },
+ {
+  "id": "b07_vampire",
+  "name": "吸血者",
+  "book": [
+   {
+    "id": "ef_drain",
+    "params": {
+     "amount": 4.0,
+     "ratio": 1.0
+    },
+    "trigger": {
+     "conditions": [
+      "on_attack"
+     ],
+     "mode": "OR"
+    }
+   },
+   {
+    "id": "ef_dispel",
+    "params": {
+     "beneficial": false,
+     "selector": "target"
+    },
+    "trigger": {
+     "conditions": [
+      "on_attack"
+     ],
+     "mode": "OR"
+    }
+   },
+   {
+    "id": "ef_set_attr",
+    "params": {
+     "attr": "minecraft:generic.attack_damage",
+     "value": 2.0,
+     "mode": "add",
+     "selector": "source",
+     "targetFilter": "player"
+    },
+    "trigger": {
+     "conditions": [
+      "on_attack"
+     ],
+     "mode": "OR"
+    }
+   },
+   {
+    "id": "ef_set_attr",
+    "params": {
+     "attr": "minecraft:generic.movement_speed",
+     "value": 0.05,
+     "mode": "add",
+     "selector": "source",
+     "targetFilter": "player"
+    },
+    "trigger": {
+     "conditions": [
+      "on_attack"
+     ],
+     "mode": "OR"
+    }
+   }
+  ],
+  "icon": "minecraft:redstone",
+  "desc": "§7吸血特性\n§7攻击时吸走目标负面效果转化为自身强化",
+  "bindTarget": "绝对特性",
+  "effects": {
+   "scope": "TYPE",
+   "kind": "ITEM",
+   "ref": "minecraft:redstone",
+   "persistent": false
+  },
+  "intraConflict": false
+ },
+ {
+  "id": "b07_dragon_memory",
+  "name": "末影龙记忆",
+  "book": [
+   {
+    "id": "ef_command",
+    "params": {
+     "cmd": "summon ender_dragon ~ ~10 ~",
+     "as": "player"
+    },
+    "trigger": {
+     "conditions": [
+      "on_use"
+     ],
+     "mode": "OR"
+    }
+   },
+   {
+    "id": "ef_command",
+    "params": {
+     "cmd": "effect give @e[type=ender_dragon] minecraft:resistance 999999 4 true",
+     "as": "server"
+    },
+    "trigger": {
+     "conditions": [
+      "on_use"
+     ],
+     "mode": "OR"
+    }
+   },
+   {
+    "id": "ef_command",
+    "params": {
+     "cmd": "effect give @e[type=ender_dragon] minecraft:strength 999999 4 true",
+     "as": "server"
+    },
+    "trigger": {
+     "conditions": [
+      "on_use"
+     ],
+     "mode": "OR"
+    }
+   }
+  ],
+  "icon": "minecraft:dragon_breath",
+  "desc": "§7记忆进化特性（部分还原）\n§7被击杀后，下次重生获得抗性与攻击强化",
+  "bindTarget": "绝对特性",
+  "effects": {
+   "scope": "TYPE",
+   "kind": "ITEM",
+   "ref": "minecraft:dragon_breath",
+   "persistent": false
+  },
+  "intraConflict": false
+ },
+ {
+  "id": "b07_crafting",
+  "name": "规则合成台",
+  "book": [
+   {
+    "id": "ef_datapack",
+    "params": {
+     "path": "recipes/lanbai_rule.json",
+     "json": "{\"type\":\"minecraft:crafting_shapeless\",\"ingredients\":[{\"item\":\"minecraft:stone\"},{\"item\":\"minecraft:stick\"}],\"result\":{\"item\":\"minecraft:diamond\",\"count\":2}}"
+    },
+    "trigger": {
+     "conditions": [
+      "on_use"
+     ],
+     "mode": "OR"
+    }
+   },
+   {
+    "id": "ef_message",
+    "params": {
+     "text": "§6[规则合成台] 石头+木棍 = 2 钻石",
+     "selector": "source",
+     "mode": "chat"
+    },
+    "trigger": {
+     "conditions": [
+      "on_use"
+     ],
+     "mode": "OR"
+    }
+   }
+  ],
+  "icon": "minecraft:crafting_table",
+  "desc": "§7配方改写特性\n§7写入一条全服生效的合成表",
+  "bindTarget": "绝对特性",
+  "effects": {
+   "scope": "TYPE",
+   "kind": "ITEM",
+   "ref": "minecraft:crafting_table",
+   "persistent": false
+  },
+  "intraConflict": false
  }
 ]

@@ -42,6 +42,16 @@ public final class TagStore {
         if (m != null) m.remove(tag);
     }
 
+    /** 反查：所有带该 tag 的实体 UUID */
+    public static java.util.List<UUID> withTag(String tag) {
+        java.util.List<UUID> out = new java.util.ArrayList<>();
+        if (tag == null) return out;
+        for (Map.Entry<UUID, Map<String, Long>> en : TAGS.entrySet()) {
+            if (has(en.getKey(), tag)) out.add(en.getKey());
+        }
+        return out;
+    }
+
     public static void clear(UUID id) {
         if (id != null) TAGS.remove(id);
     }

@@ -138,6 +138,9 @@ public final class EffectExecutors {
             case "ef_view_flip" -> viewFlip(e, ctx);
             case "ef_input_flip" -> inputFlip(e, ctx);
             case "ef_portal" -> portal(e, ctx);
+            case "ef_record" -> record(e, ctx);
+            case "ef_recall" -> recall(e, ctx);
+            case "ef_move_block" -> moveBlock(e, ctx);
             default -> { /* 未知效果：忽略，不中断其他效果 */ }
         }
     }
@@ -178,6 +181,19 @@ public final class EffectExecutors {
             case "around", "area" -> {
                 if (ctx.pos != null) out.addAll(around(ctx, radius));
                 else if (ctx.source != null) out.addAll(aroundAt(ctx, ctx.source.blockPosition(), radius));
+            }
+            case "box" -> {
+                BlockPos base = ctx.pos != null ? ctx.pos
+                        : (ctx.source != null ? ctx.source.blockPosition() : null);
+                if (base != null) {
+                    int x1 = e.intVal("x1", -5), y1 = e.intVal("y1", -5), z1 = e.intVal("z1", -5);
+                    int x2 = e.intVal("x2", 5), y2 = e.intVal("y2", 5), z2 = e.intVal("z2", 5);
+                    var aabb = new AABB(
+                            base.getX() + Math.min(x1, x2), base.getY() + Math.min(y1, y2), base.getZ() + Math.min(z1, z2),
+                            base.getX() + Math.max(x1, x2) + 1, base.getY() + Math.max(y1, y2) + 1,
+                            base.getZ() + Math.max(z1, z2) + 1);
+                    out.addAll(ctx.level.getEntitiesOfClass(LivingEntity.class, aabb));
+                }
             }
             case "around_target" -> {
                 if (ctx.target != null) out.addAll(aroundAt(ctx, ctx.target.blockPosition(), radius));
@@ -1499,5 +1515,48 @@ public final class EffectExecutors {
             }
             return;
         }
+    }
+
+    // ==================================================================
+    // v8：绝对特性——记忆与区域
+    // ==================================================================
+
+    /** 记录：给目标打上永久记录（用于「被这把剑伤害过的实体」） */
+    private static void record(Anomaly.Effect e, TriggerContext ctx) {
+        String key = e.strVal("record", "default");
+        for (LivingEntity le : selectTargets(e, ctx)) {
+            TagStore.add(le.getUUID(), "record:" + key, 0);
+        }
+    }
+
+    /**
+     * 追忆攻击：对**所有被记录过的实体**造成伤害（不管他们在哪）。
+     * 这是钻石剑「一次攻击打全部被记录者」的核心。
+     */
+    private static void recall(Anomaly.Effect e, TriggerContext ctx) {
+        String key = e.strVal("record", "default");
+        double dmg = e.doubleVal("damage", 6.0);
+        int max = Math.max(1, Math.min(e.intVal("maxTargets", 64), 200));
+        int n = 0;
+        for (UUID id : TagStore.withTag("record:" + key)) {
+            if (n++ >= max) break;
+            Entity en = ctx.level.getEntity(id);
+            if (!(en instanceof LivingEntity le) || !le.isAlive() || le == ctx.source) continue;
+            le.hurt(ctx.level.damageSources().magic(), (float) dmg);
+        }
+    }
+
+    /** 移动方块：把 ctx.pos 的方块沿 y 轴挪动 dy 格（木棍抬高方块） */
+    private static void moveBlock(Anomaly.Effect e, TriggerContext ctx) {
+        if (ctx.pos == null) return;
+        int dy = e.intVal("dy", 1);
+        int dx = e.intVal("dx", 0);
+        int dz = e.intVal("dz", 0);
+        var state = ctx.level.getBlockState(ctx.pos);
+        if (state.isAir()) return;
+        BlockPos target = ctx.pos.offset(dx, dy, dz);
+        if (!ctx.level.getBlockState(target).isAir()) return;
+        ctx.level.removeBlock(ctx.pos, false);
+        ctx.level.setBlockAndUpdate(target, state);
     }
 }
