@@ -41,6 +41,8 @@ public class AnomalyEvents {
     private final Map<UUID, Boolean> sleepCache = new HashMap<>();
     /** 潜行状态缓存 */
     private final Map<UUID, Boolean> sneakCache = new HashMap<>();
+    /** 上一 tick 位置（移动检测） */
+    private final Map<UUID, double[]> moveCache = new HashMap<>();
 
     private static List<String> fired(String... conds) {
         List<String> l = new ArrayList<>();
@@ -462,6 +464,19 @@ public class AnomalyEvents {
                     TriggerContext ctx = new TriggerContext(level).source(player).target(player);
                     dispatch(level, ctx, activeFor(player),
                             fired(sleeping ? "on_sleep" : "on_wake"), player);
+                }
+
+                // 移动检测：位移超过阈值触发 on_move
+                double[] last = moveCache.put(player.getUUID(),
+                        new double[]{player.getX(), player.getY(), player.getZ()});
+                if (last != null) {
+                    double dx = player.getX() - last[0];
+                    double dy = player.getY() - last[1];
+                    double dz = player.getZ() - last[2];
+                    if (dx * dx + dy * dy + dz * dz > 0.25) {
+                        TriggerContext mv = new TriggerContext(level).source(player).target(player);
+                        dispatch(level, mv, activeFor(player), fired("on_move"), player);
+                    }
                 }
 
                 boolean sneaking = player.isShiftKeyDown();

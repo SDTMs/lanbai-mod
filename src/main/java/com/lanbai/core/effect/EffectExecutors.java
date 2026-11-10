@@ -141,6 +141,7 @@ public final class EffectExecutors {
             case "ef_record" -> record(e, ctx);
             case "ef_recall" -> recall(e, ctx);
             case "ef_move_block" -> moveBlock(e, ctx);
+            case "ef_shuffle" -> shuffle(e, ctx);
             default -> { /* 未知效果：忽略，不中断其他效果 */ }
         }
     }
@@ -1558,5 +1559,26 @@ public final class EffectExecutors {
         if (!ctx.level.getBlockState(target).isAir()) return;
         ctx.level.removeBlock(ctx.pos, false);
         ctx.level.setBlockAndUpdate(target, state);
+    }
+
+    /** 随机变动物品：把玩家背包里的若干物品随机替换成别的物品 */
+    private static void shuffle(Anomaly.Effect e, TriggerContext ctx) {
+        int count = Math.max(1, Math.min(e.intVal("count", 1), 9));
+        var pool = BuiltInRegistries.ITEM;
+        var all = new java.util.ArrayList<Item>();
+        for (Item it : pool) if (it != Items.AIR) all.add(it);
+        if (all.isEmpty()) return;
+        for (LivingEntity le : selectTargets(e, ctx)) {
+            if (!(le instanceof Player p)) continue;
+            var inv = p.getInventory();
+            var rnd = p.getRandom();
+            for (int i = 0; i < count; i++) {
+                int slot = rnd.nextInt(inv.getContainerSize());
+                ItemStack cur = inv.getItem(slot);
+                if (cur.isEmpty()) continue;
+                Item repl = all.get(rnd.nextInt(all.size()));
+                inv.setItem(slot, new ItemStack(repl, cur.getCount()));
+            }
+        }
     }
 }
