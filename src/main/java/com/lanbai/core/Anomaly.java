@@ -15,6 +15,8 @@ public class Anomaly {
     public List<Effect> effects = new ArrayList<>();
     public boolean intraConflict = false;
     public String createdBy = "system";
+    /** 原著所属：B01 非人基因统合体 / B02 脑洞大爆炸 / B03 蓝白社 */
+    public String book = "B00";
 
     public Anomaly() {
     }

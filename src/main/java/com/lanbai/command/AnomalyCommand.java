@@ -3,6 +3,7 @@ package com.lanbai.command;
 import com.lanbai.core.Anomaly;
 import com.lanbai.core.AnomalyLoader;
 import com.lanbai.core.AnomalyRegistry;
+import com.lanbai.core.effect.EffectExecutors;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.commands.Commands;
 import net.minecraft.core.BlockPos;
@@ -20,11 +21,12 @@ import net.minecraft.world.level.block.Blocks;
 import java.util.List;
 
 /**
- * /lanbai list              列出所有收容物
- * /lanbai spawn <序号|名字>  在玩家位置创建（实体/方块/物品）
- * /lanbai info <序号>        查看详情
- * /lanbai reload            重载数据
- * /lanbai clear             清空
+ * /lanbai list                    列出所有收容物
+ * /lanbai spawn <序号|名字>        在玩家位置创建（实体/方块/物品）
+ * /lanbai info <序号|名字>         查看详情
+ * /lanbai reload                  热重载磁盘上的 anomalies.json
+ * /lanbai file                    显示数据文件路径
+ * /lanbai clear                   清空
  */
 public class AnomalyCommand {
 
@@ -69,7 +71,7 @@ public class AnomalyCommand {
                                             return 0;
                                         }
                                         ctx.getSource().sendSuccess(() -> Component.literal(
-                                                "§6" + a.name + " §7(" + a.id + ") §f绑定:" + a.target.kind), false);
+                                                "§6" + a.name + " §7(" + a.id + ") §f绑定:" + a.target.scope + "/" + a.target.kind), false);
                                         for (Anomaly.Effect e : a.effects) {
                                             String t = e.trigger == null ? "§e被动" : "§b" + String.join("/", e.trigger.conditions);
                                             ctx.getSource().sendSuccess(() -> Component.literal(
@@ -78,9 +80,20 @@ public class AnomalyCommand {
                                         return 1;
                                     })))
                     .then(Commands.literal("reload").executes(ctx -> {
+                        var server = ctx.getSource().getServer();
+                        // 先把上次加在玩家身上的属性 modifier 撤掉，再重建注册表
+                        EffectExecutors.clearAllModifiers(server);
                         AnomalyRegistry.get().clear();
                         int n = AnomalyLoader.load();
-                        ctx.getSource().sendSuccess(() -> Component.literal("§a已重载 " + n + " 个"), false);
+                        ctx.getSource().sendSuccess(() -> Component.literal(
+                                "§a已重载 " + n + " 个 §7(" + AnomalyLoader.lastSource + ")"), false);
+                        return 1;
+                    }))
+                    .then(Commands.literal("file").executes(ctx -> {
+                        ctx.getSource().sendSuccess(() -> Component.literal(
+                                "§e数据文件: §f" + AnomalyLoader.dataFile()), false);
+                        ctx.getSource().sendSuccess(() -> Component.literal(
+                                "§e上次来源: §f" + AnomalyLoader.lastSource), false);
                         return 1;
                     }))
                     .then(Commands.literal("clear").executes(ctx -> {
@@ -105,7 +118,6 @@ public class AnomalyCommand {
 
         switch (a.target.kind) {
             case ENTITY -> {
-                // 生成一个实体，绑定到它
                 String entId = "minecraft:zombie";
                 for (Anomaly.Effect e : a.effects) {
                     if ("ef_spawn".equals(e.id)) {
@@ -128,7 +140,6 @@ public class AnomalyCommand {
                 return "§c生成实体失败";
             }
             case BLOCK, POS, AREA -> {
-                // 放一个方块
                 BlockPos target = pos.below();
                 Block b = Blocks.STONE;
                 for (Anomaly.Effect e : a.effects) {
@@ -140,7 +151,7 @@ public class AnomalyCommand {
                 }
                 level.setBlockAndUpdate(target, b.defaultBlockState());
                 a.target.scope = Anomaly.BindTarget.Scope.INSTANCE;
-                a.target.ref = "minecraft:overworld;" + target.getX() + "," + target.getY() + "," + target.getZ();
+                a.target.ref = level.dimension().location() + ";" + target.getX() + "," + target.getY() + "," + target.getZ();
                 a.target.persistent = true;
                 reg.register(a);
                 return "§a已创建 §f" + a.name + " §7→ 方块 @ " + target.toShortString();
@@ -179,7 +190,10 @@ public class AnomalyCommand {
         } catch (NumberFormatException ignored) {
         }
         for (Anomaly a : all) {
-            if (a.name.equals(arg) || a.name.contains(arg)) return a;
+            if (a.name.equals(arg) || a.id.equals(arg)) return a;
+        }
+        for (Anomaly a : all) {
+            if (a.name.contains(arg)) return a;
         }
         return null;
     }
