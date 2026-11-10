@@ -1806,7 +1806,7 @@
   "name": "重锤",
   "book": "V1.21",
   "icon": "minecraft:iron_axe",
-  "desc": "§71.21 Tricky Trials\n§7下落攻击造成巨额伤害\n§8[替身] 铁斧 + 下落判定",
+  "desc": "§71.21 Tricky Trials\n§7下落攻击：伤害 = 摔落高度 × 8（无上限）\n§7起跳越高，伤害越高\n§8[已改为真实摔落距离]",
   "bindTarget": {
    "scope": "TYPE",
    "kind": "ITEM",
@@ -1815,9 +1815,12 @@
   },
   "effects": [
    {
-    "id": "ef_damage",
+    "id": "ef_impale",
     "params": {
-     "amount": 20.0
+     "factor": 8.0,
+     "selector": "around_target",
+     "radius": 2,
+     "targetFilter": "all"
     },
     "trigger": {
      "conditions": [
@@ -1825,14 +1828,13 @@
      ],
      "mode": "OR"
     },
-    "when": {
-     "falling": true
-    }
+    "depth": 50000
    },
    {
     "id": "ef_push",
     "params": {
-     "power": 3.0
+     "power": 3.0,
+     "selector": "target"
     },
     "trigger": {
      "conditions": [
@@ -1840,9 +1842,7 @@
      ],
      "mode": "OR"
     },
-    "when": {
-     "falling": true
-    }
+    "depth": 50001
    },
    {
     "id": "ef_explode",
@@ -1856,9 +1856,7 @@
      ],
      "mode": "OR"
     },
-    "when": {
-     "falling": true
-    }
+    "depth": 50002
    }
   ],
   "intraConflict": false

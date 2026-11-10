@@ -1335,6 +1335,10 @@ public final class EffectExecutors {
      *   "12"            固定值
      */
     private static double calcAmount(Anomaly.Effect e, LivingEntity target, String key, double def) {
+        return calcAmount(e, target, null, key, def);
+    }
+
+    private static double calcAmount(Anomaly.Effect e, LivingEntity target, TriggerContext ctx2, String key, double def) {
         Object raw = e.val(key, null);
         if (raw == null) return def;
         if (raw instanceof Number n) return n.doubleValue();
@@ -1352,6 +1356,9 @@ public final class EffectExecutors {
             if (s.startsWith("max_hp*")) {
                 return target.getMaxHealth() * Double.parseDouble(s.substring(7));
             }
+            if (s.startsWith("sfall*") && ctx2 != null && ctx2.source != null) {
+                return Math.max(ctx2.source.fallDistance, 0.0) * Double.parseDouble(s.substring(6));
+            }
             return Double.parseDouble(s);
         } catch (Exception ex) {
             return def;
@@ -1359,12 +1366,20 @@ public final class EffectExecutors {
     }
 
     /** 穿刺：伤害 = 下落速度 × 系数（重锤 / 长矛真实机制） */
+    /**
+     * 穿刺：伤害 = 攻击者摔落高度 × 系数，无上限。
+     * 用 Entity.fallDistance（真实摔落距离），不是目标速度。
+     */
     private static void impale(Anomaly.Effect e, TriggerContext ctx) {
         double mul = e.doubleVal("factor", 5.0);
+        double fall = 0.0;
+        if (ctx.source != null) {
+            fall = Math.max(ctx.source.fallDistance, Math.max(0.0, -ctx.source.getDeltaMovement().y * 8.0));
+        }
+        if (fall < 0.5) return;
+        float dmg = (float) (fall * mul);
         for (LivingEntity le : selectTargets(e, ctx)) {
-            double vy = Math.max(0.0, -le.getDeltaMovement().y);
-            if (vy < 0.05) continue;
-            float dmg = (float) (vy * mul);
+            if (le == ctx.source) continue;
             le.hurt(ctx.level.damageSources().magic(), dmg);
         }
     }
