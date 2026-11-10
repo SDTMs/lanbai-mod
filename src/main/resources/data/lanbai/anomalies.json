@@ -1589,5 +1589,603 @@
   ],
   "intraConflict": false,
   "depth": 52000
+ },
+ {
+  "id": "b05_spear",
+  "name": "长矛",
+  "book": "V1.21.9",
+  "icon": "minecraft:trident",
+  "desc": "§71.21.9 Mounts of Mayhem\n§7攻击距离更长、伤害更高\n§8[替身] 三叉戟承载",
+  "bindTarget": {
+   "scope": "TYPE",
+   "kind": "ITEM",
+   "ref": "minecraft:trident",
+   "persistent": false
+  },
+  "effects": [
+   {
+    "id": "ef_set_attr",
+    "params": {
+     "attr": "minecraft:generic.attack_damage",
+     "value": 10.0,
+     "mode": "add",
+     "selector": "source",
+     "targetFilter": "player"
+    },
+    "trigger": {
+     "conditions": [
+      "on_hold"
+     ],
+     "mode": "OR"
+    }
+   },
+   {
+    "id": "ef_push",
+    "params": {
+     "power": 2.5
+    },
+    "trigger": {
+     "conditions": [
+      "on_attack"
+     ],
+     "mode": "OR"
+    }
+   },
+   {
+    "id": "ef_damage",
+    "params": {
+     "amount": 7.0
+    },
+    "trigger": {
+     "conditions": [
+      "on_attack"
+     ],
+     "mode": "OR"
+    }
+   }
+  ],
+  "intraConflict": false
+ },
+ {
+  "id": "b05_zombie_horse",
+  "name": "僵尸马",
+  "book": "V1.21.9",
+  "icon": "minecraft:zombie_horse_spawn_egg",
+  "desc": "§71.21.9\n§7召唤僵尸马并自动骑乘\n§8[替身] 原版 zombie_horse 实体",
+  "bindTarget": {
+   "scope": "TYPE",
+   "kind": "ITEM",
+   "ref": "minecraft:saddle",
+   "persistent": false
+  },
+  "effects": [
+   {
+    "id": "ef_spawn",
+    "params": {
+     "entity": "minecraft:zombie_horse",
+     "count": 1,
+     "spread": 1
+    },
+    "trigger": {
+     "conditions": [
+      "on_use"
+     ],
+     "mode": "OR"
+    }
+   },
+   {
+    "id": "ef_command",
+    "params": {
+     "cmd": "ride @s mount @e[type=zombie_horse,limit=1,sort=nearest]",
+     "as": "player"
+    },
+    "trigger": {
+     "conditions": [
+      "on_use"
+     ],
+     "mode": "OR"
+    }
+   }
+  ],
+  "intraConflict": false
+ },
+ {
+  "id": "b05_nautilus",
+  "name": "鹦鹉螺",
+  "book": "V1.21.9",
+  "icon": "minecraft:nautilus_shell",
+  "desc": "§71.21.9\n§7召唤深海守卫并骑乘（鹦鹉螺替身）\n§8[替身] 1.20.1 无 nautilus 实体",
+  "bindTarget": {
+   "scope": "TYPE",
+   "kind": "ITEM",
+   "ref": "minecraft:nautilus_shell",
+   "persistent": false
+  },
+  "effects": [
+   {
+    "id": "ef_spawn",
+    "params": {
+     "entity": "minecraft:guardian",
+     "count": 1,
+     "spread": 1
+    },
+    "trigger": {
+     "conditions": [
+      "on_use"
+     ],
+     "mode": "OR"
+    }
+   },
+   {
+    "id": "ef_command",
+    "params": {
+     "cmd": "ride @s mount @e[type=guardian,limit=1,sort=nearest]",
+     "as": "player"
+    },
+    "trigger": {
+     "conditions": [
+      "on_use"
+     ],
+     "mode": "OR"
+    }
+   },
+   {
+    "id": "ef_command",
+    "params": {
+     "cmd": "effect give @s minecraft:water_breathing 600 0 true",
+     "as": "player"
+    },
+    "trigger": {
+     "conditions": [
+      "on_use"
+     ],
+     "mode": "OR"
+    }
+   }
+  ],
+  "intraConflict": false
+ },
+ {
+  "id": "b05_happy_ghast",
+  "name": "快乐恶魂",
+  "book": "V1.21.6",
+  "icon": "minecraft:ghast_tear",
+  "desc": "§71.21.6 Chase the Skies\n§7骑乘飞行生物\n§8[替身] 幻翼",
+  "bindTarget": {
+   "scope": "TYPE",
+   "kind": "ITEM",
+   "ref": "minecraft:ghast_tear",
+   "persistent": false
+  },
+  "effects": [
+   {
+    "id": "ef_spawn",
+    "params": {
+     "entity": "minecraft:phantom",
+     "count": 1,
+     "spread": 1
+    },
+    "trigger": {
+     "conditions": [
+      "on_use"
+     ],
+     "mode": "OR"
+    }
+   },
+   {
+    "id": "ef_command",
+    "params": {
+     "cmd": "ride @s mount @e[type=phantom,limit=1,sort=nearest]",
+     "as": "player"
+    },
+    "trigger": {
+     "conditions": [
+      "on_use"
+     ],
+     "mode": "OR"
+    }
+   },
+   {
+    "id": "ef_command",
+    "params": {
+     "cmd": "effect give @s minecraft:slow_falling 1200 0 true",
+     "as": "player"
+    },
+    "trigger": {
+     "conditions": [
+      "on_use"
+     ],
+     "mode": "OR"
+    }
+   }
+  ],
+  "intraConflict": false
+ },
+ {
+  "id": "b05_mace",
+  "name": "重锤",
+  "book": "V1.21",
+  "icon": "minecraft:iron_axe",
+  "desc": "§71.21 Tricky Trials\n§7下落攻击造成巨额伤害\n§8[替身] 铁斧 + 下落判定",
+  "bindTarget": {
+   "scope": "TYPE",
+   "kind": "ITEM",
+   "ref": "minecraft:iron_axe",
+   "persistent": false
+  },
+  "effects": [
+   {
+    "id": "ef_damage",
+    "params": {
+     "amount": 20.0
+    },
+    "trigger": {
+     "conditions": [
+      "on_attack"
+     ],
+     "mode": "OR"
+    },
+    "when": {
+     "falling": true
+    }
+   },
+   {
+    "id": "ef_push",
+    "params": {
+     "power": 3.0
+    },
+    "trigger": {
+     "conditions": [
+      "on_attack"
+     ],
+     "mode": "OR"
+    },
+    "when": {
+     "falling": true
+    }
+   },
+   {
+    "id": "ef_explode",
+    "params": {
+     "radius": 2,
+     "power": 6.0
+    },
+    "trigger": {
+     "conditions": [
+      "on_attack"
+     ],
+     "mode": "OR"
+    },
+    "when": {
+     "falling": true
+    }
+   }
+  ],
+  "intraConflict": false
+ },
+ {
+  "id": "b05_wind_charge",
+  "name": "风弹",
+  "book": "V1.21",
+  "icon": "minecraft:snowball",
+  "desc": "§71.21\n§7击退并弹射目标",
+  "bindTarget": {
+   "scope": "TYPE",
+   "kind": "ITEM",
+   "ref": "minecraft:snowball",
+   "persistent": false
+  },
+  "effects": [
+   {
+    "id": "ef_push",
+    "params": {
+     "power": 1.5,
+     "radius": 5,
+     "targetFilter": "all"
+    },
+    "trigger": {
+     "conditions": [
+      "on_use"
+     ],
+     "mode": "OR"
+    }
+   },
+   {
+    "id": "ef_launch",
+    "params": {
+     "power": 1.2,
+     "direction": "up",
+     "radius": 5,
+     "targetFilter": "all"
+    },
+    "trigger": {
+     "conditions": [
+      "on_use"
+     ],
+     "mode": "OR"
+    }
+   }
+  ],
+  "intraConflict": false
+ },
+ {
+  "id": "b05_trial_spawner",
+  "name": "试炼刷怪笼",
+  "book": "V1.21",
+  "icon": "minecraft:spawner",
+  "desc": "§71.21\n§7周期性生成敌人",
+  "bindTarget": {
+   "scope": "TYPE",
+   "kind": "ITEM",
+   "ref": "minecraft:spawner",
+   "persistent": false
+  },
+  "effects": [
+   {
+    "id": "ef_spawn",
+    "params": {
+     "entity": "minecraft:husk",
+     "count": 2,
+     "spread": 6
+    },
+    "period": 200
+   },
+   {
+    "id": "ef_message",
+    "params": {
+     "text": "§c[试炼] 敌人出现了",
+     "selector": "source",
+     "mode": "actionbar"
+    },
+    "period": 200
+   }
+  ],
+  "intraConflict": false
+ },
+ {
+  "id": "b05_bundle",
+  "name": "收纳袋",
+  "book": "V1.21.2",
+  "icon": "minecraft:bundle",
+  "desc": "§71.21.2\n§7收纳/取出物品",
+  "bindTarget": {
+   "scope": "TYPE",
+   "kind": "ITEM",
+   "ref": "minecraft:bundle",
+   "persistent": false
+  },
+  "effects": [
+   {
+    "id": "ef_take",
+    "params": {
+     "item": "",
+     "selector": "source"
+    },
+    "trigger": {
+     "conditions": [
+      "on_use"
+     ],
+     "mode": "OR"
+    }
+   },
+   {
+    "id": "ef_give",
+    "params": {
+     "item": "minecraft:bread",
+     "count": 16,
+     "selector": "source"
+    },
+    "trigger": {
+     "conditions": [
+      "on_use"
+     ],
+     "mode": "OR"
+    }
+   }
+  ],
+  "intraConflict": false
+ },
+ {
+  "id": "b05_locator_bar",
+  "name": "定位条",
+  "book": "V1.21.6",
+  "icon": "minecraft:compass",
+  "desc": "§71.21.6\n§7追踪附近玩家",
+  "bindTarget": {
+   "scope": "TYPE",
+   "kind": "ITEM",
+   "ref": "minecraft:compass",
+   "persistent": false
+  },
+  "effects": [
+   {
+    "id": "ef_scan",
+    "params": {
+     "radius": 128,
+     "header": "§b[定位] ",
+     "targetFilter": "player"
+    },
+    "trigger": {
+     "conditions": [
+      "on_use"
+     ],
+     "mode": "OR"
+    }
+   },
+   {
+    "id": "ef_command",
+    "params": {
+     "cmd": "effect give @a minecraft:glowing 60 0 true",
+     "as": "server"
+    },
+    "trigger": {
+     "conditions": [
+      "on_use"
+     ],
+     "mode": "OR"
+    }
+   }
+  ],
+  "intraConflict": false
+ },
+ {
+  "id": "b05_hardcore",
+  "name": "硬核模式",
+  "book": "V1.21.2",
+  "icon": "minecraft:bedrock",
+  "desc": "§71.21.2\n§7世界变为硬核",
+  "bindTarget": {
+   "scope": "TYPE",
+   "kind": "ITEM",
+   "ref": "minecraft:bedrock",
+   "persistent": false
+  },
+  "effects": [
+   {
+    "id": "ef_command",
+    "params": {
+     "cmd": "difficulty hardcore",
+     "as": "server"
+    },
+    "trigger": {
+     "conditions": [
+      "on_use"
+     ],
+     "mode": "OR"
+    }
+   },
+   {
+    "id": "ef_command",
+    "params": {
+     "cmd": "gamerule keepInventory false",
+     "as": "server"
+    },
+    "trigger": {
+     "conditions": [
+      "on_use"
+     ],
+     "mode": "OR"
+    }
+   }
+  ],
+  "intraConflict": false
+ },
+ {
+  "id": "b05_pale_garden",
+  "name": "苍白花园",
+  "book": "V1.21.4",
+  "icon": "minecraft:moss_block",
+  "desc": "§71.21.4 The Garden Awakens\n§7地面化为苍白苔藓\n§8[替身] 苔藓块",
+  "bindTarget": {
+   "scope": "TYPE",
+   "kind": "ITEM",
+   "ref": "minecraft:moss_block",
+   "persistent": false
+  },
+  "effects": [
+   {
+    "id": "ef_fill",
+    "params": {
+     "block": "minecraft:moss_block",
+     "radius": 4
+    },
+    "trigger": {
+     "conditions": [
+      "on_use_block"
+     ],
+     "mode": "OR"
+    }
+   },
+   {
+    "id": "ef_spawn",
+    "params": {
+     "entity": "minecraft:zombie",
+     "count": 1,
+     "spread": 4
+    },
+    "trigger": {
+     "conditions": [
+      "on_use_block"
+     ],
+     "mode": "OR"
+    }
+   },
+   {
+    "id": "ef_message",
+    "params": {
+     "text": "§7[苍白花园] 这里没有声音",
+     "selector": "source",
+     "mode": "actionbar"
+    },
+    "trigger": {
+     "conditions": [
+      "on_use_block"
+     ],
+     "mode": "OR"
+    }
+   }
+  ],
+  "intraConflict": false
+ },
+ {
+  "id": "b05_creaking",
+  "name": "嘎吱怪",
+  "book": "V1.21.4",
+  "icon": "minecraft:oak_log",
+  "desc": "§71.21.4\n§7只有被注视时才行动\n§8[替身] 僵尸 + 禁 AI",
+  "bindTarget": {
+   "scope": "TYPE",
+   "kind": "ITEM",
+   "ref": "minecraft:oak_log",
+   "persistent": false
+  },
+  "effects": [
+   {
+    "id": "ef_spawn",
+    "params": {
+     "entity": "minecraft:zombie",
+     "count": 1,
+     "spread": 2
+    },
+    "trigger": {
+     "conditions": [
+      "on_use"
+     ],
+     "mode": "OR"
+    }
+   },
+   {
+    "id": "ef_noai",
+    "params": {
+     "value": true,
+     "radius": 4,
+     "targetFilter": "non_player"
+    },
+    "trigger": {
+     "conditions": [
+      "on_use"
+     ],
+     "mode": "OR"
+    },
+    "delay": 20
+   },
+   {
+    "id": "ef_status",
+    "params": {
+     "effect": "minecraft:darkness",
+     "level": 0,
+     "duration": 100,
+     "radius": 6,
+     "targetFilter": "player"
+    },
+    "trigger": {
+     "conditions": [
+      "on_use"
+     ],
+     "mode": "OR"
+    }
+   }
+  ],
+  "intraConflict": false
  }
 ]

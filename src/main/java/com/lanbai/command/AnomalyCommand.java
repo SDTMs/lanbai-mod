@@ -15,6 +15,7 @@ import net.minecraft.nbt.StringTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.player.Player;
@@ -52,6 +53,27 @@ public class AnomalyCommand {
                         }
                         return 1;
                     }))
+                    .then(Commands.literal("gift")
+                            .then(Commands.argument("player", com.mojang.brigadier.arguments.StringArgumentType.string())
+                                    .then(Commands.argument("target", com.mojang.brigadier.arguments.StringArgumentType.string())
+                                            .executes(ctx -> {
+                                                String pname = com.mojang.brigadier.arguments.StringArgumentType.getString(ctx, "player");
+                                                String arg = com.mojang.brigadier.arguments.StringArgumentType.getString(ctx, "target");
+                                                Anomaly a = find(arg);
+                                                if (a == null) {
+                                                    ctx.getSource().sendFailure(Component.literal("§c未找到: " + arg));
+                                                    return 0;
+                                                }
+                                                ServerPlayer sp = ctx.getSource().getServer().getPlayerList().getPlayerByName(pname);
+                                                if (sp == null) {
+                                                    ctx.getSource().sendFailure(Component.literal("§c玩家不在线: " + pname));
+                                                    return 0;
+                                                }
+                                                String msg = grant(a, sp);
+                                                ctx.getSource().sendSuccess(() -> Component.literal(msg), true);
+                                                sp.displayClientMessage(Component.literal("§a你收到了收容物: §6" + a.name), false);
+                                                return 1;
+                                            }))))
                     .then(Commands.literal("give")
                             .then(Commands.argument("target", com.mojang.brigadier.arguments.StringArgumentType.string())
                                     .executes(ctx -> {
