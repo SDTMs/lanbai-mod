@@ -1,6 +1,7 @@
 package com.lanbai.core.effect;
 
 import com.lanbai.core.Anomaly;
+import com.lanbai.core.GravityStore;
 import com.lanbai.core.Scheduler;
 import com.lanbai.core.TagStore;
 import com.lanbai.core.TriggerContext;
@@ -1131,15 +1132,8 @@ public final class EffectExecutors {
     private static void gravity(Anomaly.Effect e, TriggerContext ctx) {
         double factor = e.doubleVal("factor", 1.0);
         for (LivingEntity le : selectTargets(e, ctx)) {
-            if (factor <= 0.001) {
-                le.setNoGravity(true);
-                le.setDeltaMovement(le.getDeltaMovement().x, le.getDeltaMovement().y * 0.9, le.getDeltaMovement().z);
-            } else {
-                le.setNoGravity(true);
-                var mv = le.getDeltaMovement();
-                le.setDeltaMovement(mv.x, mv.y - 0.08 * factor, mv.z);
-            }
-            le.hurtMarked = true;
+            GravityStore.set(le.getUUID(), (float) factor);
+            le.setNoGravity(factor <= 0.001);
         }
     }
 
