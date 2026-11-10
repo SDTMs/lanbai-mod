@@ -1868,7 +1868,7 @@
   "name": "风弹",
   "book": "V1.21",
   "icon": "minecraft:snowball",
-  "desc": "§71.21\n§7击退并弹射目标",
+  "desc": "§71.21\n§7范围内所有实体被击退并弹射\n§8[已修复] 支持范围选择器",
   "bindTarget": {
    "scope": "TYPE",
    "kind": "ITEM",
@@ -1880,8 +1880,9 @@
     "id": "ef_push",
     "params": {
      "power": 1.5,
-     "radius": 5,
-     "targetFilter": "all"
+     "radius": 6,
+     "targetFilter": "all",
+     "selector": "around"
     },
     "trigger": {
      "conditions": [
@@ -1895,8 +1896,9 @@
     "params": {
      "power": 1.2,
      "direction": "up",
-     "radius": 5,
-     "targetFilter": "all"
+     "radius": 6,
+     "targetFilter": "all",
+     "selector": "around"
     },
     "trigger": {
      "conditions": [

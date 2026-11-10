@@ -381,16 +381,17 @@ public final class EffectExecutors {
     // ============ 击退 ============
 
     private static void push(Anomaly.Effect e, TriggerContext ctx) {
-        Entity t = ctx.target;
-        if (t == null) return;
         double power = e.doubleVal("power", 1.5);
-        if (ctx.source != null) {
-            double dx = t.getX() - ctx.source.getX();
-            double dz = t.getZ() - ctx.source.getZ();
-            double len = Math.max(0.01, Math.sqrt(dx * dx + dz * dz));
-            t.push(dx / len * power, 0.3, dz / len * power);
-        } else {
-            t.push(0, power, 0);
+        for (LivingEntity t : selectTargets(e, ctx)) {
+            if (ctx.source != null && ctx.source != t) {
+                double dx = t.getX() - ctx.source.getX();
+                double dz = t.getZ() - ctx.source.getZ();
+                double len = Math.max(0.01, Math.sqrt(dx * dx + dz * dz));
+                t.push(dx / len * power, 0.3, dz / len * power);
+            } else {
+                t.push(0, power, 0);
+            }
+            t.hurtMarked = true;
         }
     }
 
@@ -697,19 +698,19 @@ public final class EffectExecutors {
 
     /** 弹射：给目标（或自己）一个方向速度 */
     private static void launch(Anomaly.Effect e, TriggerContext ctx) {
-        Entity t = ctx.target != null ? ctx.target : ctx.source;
-        if (t == null) return;
         double power = e.doubleVal("power", 1.5);
         String dir = e.strVal("direction", "up");
-        if (dir.equals("forward") && ctx.source != null) {
-            double yaw = Math.toRadians(ctx.source.getYRot());
-            double dx = -Math.sin(yaw) * power;
-            double dz = Math.cos(yaw) * power;
-            t.setDeltaMovement(dx, 0.2, dz);
-        } else {
-            t.setDeltaMovement(t.getDeltaMovement().x, power, t.getDeltaMovement().z);
+        for (LivingEntity t : selectTargets(e, ctx)) {
+            if (dir.equals("forward") && ctx.source != null) {
+                double yaw = Math.toRadians(ctx.source.getYRot());
+                double dx = -Math.sin(yaw) * power;
+                double dz = Math.cos(yaw) * power;
+                t.setDeltaMovement(dx, 0.2, dz);
+            } else {
+                t.setDeltaMovement(t.getDeltaMovement().x, power, t.getDeltaMovement().z);
+            }
+            t.hurtMarked = true;
         }
-        t.hurtMarked = true;
     }
 
     /** 扫描：半径内实体列给玩家（铜镜 / 共享之眼） */
