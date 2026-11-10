@@ -99,6 +99,13 @@ public class AnomalyEvents {
         }
     }
 
+    /** 对单个收容物跑一遍：触发效果 + 被动 + 周期 */
+    private void triggerAnomaly(Anomaly a, TriggerContext ctx, Player fb, ServerLevel level) {
+        dispatch(level, ctx, List.of(a), fired("on_near", "on_hold", "on_contact"), fb);
+        dispatchPassive(level, ctx, List.of(a), fb);
+        dispatchPeriodic(level, ctx, List.of(a), fb);
+    }
+
     /** 执行前检查条件与延迟 */
     private void fire(Anomaly a, Anomaly.Effect e, TriggerContext ctx, Player feedbackTo) {
         if (!ConditionChecker.check(e.when, ctx)) return;
@@ -339,6 +346,21 @@ public class AnomalyEvents {
 
         ServerTickEvents.END_SERVER_TICK.register(server -> {
             Scheduler.tick();
+            // 每 tick 处理「重力反转」与「操作反转」，这两种必须逐 tick 才有效
+            for (ServerPlayer fp : server.getPlayerList().getPlayers()) {
+                var mv = fp.getDeltaMovement();
+                boolean flipped = false;
+                if (TagStore.has(fp.getUUID(), "lanbai:gup")) {
+                    fp.setDeltaMovement(mv.x, mv.y + 0.08, mv.z);
+                    flipped = true;
+                }
+                if (TagStore.has(fp.getUUID(), "lanbai:iflip")) {
+                    fp.setDeltaMovement(-fp.getDeltaMovement().x, fp.getDeltaMovement().y,
+                            -fp.getDeltaMovement().z);
+                    flipped = true;
+                }
+                if (flipped) fp.hurtMarked = true;
+            }
             tickCounter++;
             if (tickCounter % 10 != 0) return;
 
@@ -398,7 +420,15 @@ public class AnomalyEvents {
                                 }
                             }
                         }
-                        case ENTITY, BEHAVIOR, DIMENSION, PLAYER_DATA -> {
+                        case DIMENSION -> {
+                            String dim = level.dimension().location().toString();
+                            if (dim.equals(a.target.ref)) {
+                                TriggerContext ctx = new TriggerContext(level)
+                                        .source(player).target(player).pos(ppos);
+                                triggerAnomaly(a, ctx, player, level);
+                            }
+                        }
+                        case ENTITY, BEHAVIOR, PLAYER_DATA -> {
                             if (player.getUUID().toString().equals(a.target.ref)) {
                                 TriggerContext ctx = new TriggerContext(level)
                                         .source(player).target(player);
@@ -407,6 +437,14 @@ public class AnomalyEvents {
                             }
                         }
                     }
+                }
+
+                // 视角上下翻转（服务端只能周期性强制朝向）
+                if (TagStore.has(player.getUUID(), "lanbai:vflip")) {
+                    float newPitch = -player.getXRot();
+                    player.setXRot(newPitch);
+                    player.connection.teleport(player.getX(), player.getY(), player.getZ(),
+                            player.getYRot(), newPitch);
                 }
 
                 // 穿戴 / 睡眠 / 潜行：用状态变化检测，避免依赖不存在的事件 API

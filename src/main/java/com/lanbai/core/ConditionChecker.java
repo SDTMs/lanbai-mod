@@ -64,6 +64,22 @@ public final class ConditionChecker {
                 if (want.equals("clear")) return !ctx.level.isRaining();
                 return true;
             }
+            case "structure": {
+                // 格式: "minecraft:diamond_block|4x5"
+                if (ctx.pos == null) return false;
+                String spec = String.valueOf(v);
+                String[] parts = spec.split("\\|");
+                if (parts.length < 2) return false;
+                var block = net.minecraft.core.registries.BuiltInRegistries.BLOCK
+                        .get(new net.minecraft.resources.ResourceLocation(parts[0]));
+                if (block == null) return false;
+                String[] wh = parts[1].split("x");
+                if (wh.length < 2) return false;
+                int w = Integer.parseInt(wh[0]);
+                int h = Integer.parseInt(wh[1]);
+                // 两个朝向都试
+                return frameMatches(ctx, block, w, h, true) || frameMatches(ctx, block, w, h, false);
+            }
             case "dimension":
                 return ctx.level.dimension().location().toString().equals(String.valueOf(v));
             case "falling":
@@ -101,6 +117,27 @@ public final class ConditionChecker {
             default:
                 return true;
         }
+    }
+
+    /** 检测以 pos 为左下角的 w×h 门框：边框是 block，内部是空气 */
+    private static boolean frameMatches(TriggerContext ctx, net.minecraft.world.level.block.Block want,
+                                        int w, int h, boolean alongX) {
+        var level = ctx.level;
+        for (int i = 0; i < w; i++) {
+            for (int j = 0; j < h; j++) {
+                boolean edge = i == 0 || i == w - 1 || j == 0 || j == h - 1;
+                var pos = alongX
+                        ? ctx.pos.offset(i, j, 0)
+                        : ctx.pos.offset(0, j, i);
+                var state = level.getBlockState(pos);
+                if (edge) {
+                    if (!state.is(want)) return false;
+                } else {
+                    if (!state.isAir()) return false;
+                }
+            }
+        }
+        return true;
     }
 
     private static double num(Object v, double def) {

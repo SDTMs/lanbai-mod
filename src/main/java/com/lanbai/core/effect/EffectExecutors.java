@@ -131,6 +131,12 @@ public final class EffectExecutors {
             case "ef_health" -> health(e, ctx);
             case "ef_food" -> food(e, ctx);
             case "ef_structure" -> structure(e, ctx);
+            case "ef_summon" -> summon(e, ctx);
+            case "ef_impale" -> impale(e, ctx);
+            // ---- v7：感知/物理层原子（可单独翻转）----
+            case "ef_gravity_dir" -> gravityDir(e, ctx);
+            case "ef_view_flip" -> viewFlip(e, ctx);
+            case "ef_input_flip" -> inputFlip(e, ctx);
             default -> { /* 未知效果：忽略，不中断其他效果 */ }
         }
     }
@@ -251,16 +257,16 @@ public final class EffectExecutors {
     // ============ 伤害 ============
 
     private static void damage(Anomaly.Effect e, TriggerContext ctx) {
-        float amount = (float) e.doubleVal("amount", 3.0);
         int radius = e.intVal("radius", 0);
         if (radius > 0 && ctx.pos != null) {
             for (LivingEntity le : around(ctx, radius)) {
-                if (accept(e, le)) le.hurt(ctx.level.damageSources().magic(), amount);
+                if (!accept(e, le)) continue;
+                le.hurt(ctx.level.damageSources().magic(), (float) calcAmount(e, le, "amount", 3.0));
             }
             return;
         }
         if (ctx.target instanceof LivingEntity living && accept(e, living)) {
-            living.hurt(ctx.level.damageSources().magic(), amount);
+            living.hurt(ctx.level.damageSources().magic(), (float) calcAmount(e, living, "amount", 3.0));
         }
     }
 
@@ -1309,6 +1315,145 @@ public final class EffectExecutors {
         try {
             srv.getCommands().performPrefixedCommand(srv.createCommandSourceStack(), cmd);
         } catch (Exception ignored) {
+        }
+    }
+
+    // ==================================================================
+    // v6：动态数值 / 自定义怪物模板
+    // ==================================================================
+
+    /**
+     * 动态数值：支持公式字符串，实现无上限伤害。
+     *   "speed*10"      目标速度 × 10
+     *   "fall*5"        下落速度 × 5（重锤）
+     *   "target_hp*0.5" 目标当前血量 × 0.5（斩杀）
+     *   "max_hp*0.3"    目标最大血量 × 0.3
+     *   "12"            固定值
+     */
+    private static double calcAmount(Anomaly.Effect e, LivingEntity target, String key, double def) {
+        Object raw = e.val(key, null);
+        if (raw == null) return def;
+        if (raw instanceof Number n) return n.doubleValue();
+        String s = String.valueOf(raw).replace(" ", "");
+        try {
+            if (s.startsWith("speed*")) {
+                return target.getDeltaMovement().length() * Double.parseDouble(s.substring(6));
+            }
+            if (s.startsWith("fall*")) {
+                return Math.max(0.0, -target.getDeltaMovement().y) * Double.parseDouble(s.substring(5));
+            }
+            if (s.startsWith("target_hp*")) {
+                return target.getHealth() * Double.parseDouble(s.substring(10));
+            }
+            if (s.startsWith("max_hp*")) {
+                return target.getMaxHealth() * Double.parseDouble(s.substring(7));
+            }
+            return Double.parseDouble(s);
+        } catch (Exception ex) {
+            return def;
+        }
+    }
+
+    /** 穿刺：伤害 = 下落速度 × 系数（重锤 / 长矛真实机制） */
+    private static void impale(Anomaly.Effect e, TriggerContext ctx) {
+        double mul = e.doubleVal("factor", 5.0);
+        for (LivingEntity le : selectTargets(e, ctx)) {
+            double vy = Math.max(0.0, -le.getDeltaMovement().y);
+            if (vy < 0.05) continue;
+            float dmg = (float) (vy * mul);
+            le.hurt(ctx.level.damageSources().magic(), dmg);
+        }
+    }
+
+    /**
+     * 自定义怪物模板：生成实体并套上属性/药水/名字。
+     * params: entity, count, spread, health, damage, speed, name, effects("id:level:ticks,...")
+     */
+    private static void summon(Anomaly.Effect e, TriggerContext ctx) {
+        var type = BuiltInRegistries.ENTITY_TYPE.get(new ResourceLocation(e.strVal("entity", "minecraft:zombie")));
+        if (type == null || ctx.pos == null) return;
+        int count = Math.max(1, Math.min(e.intVal("count", 1), 50));
+        int spread = e.intVal("spread", 3);
+        double health = e.doubleVal("health", 0.0);
+        double damage = e.doubleVal("damage", 0.0);
+        double speed = e.doubleVal("speed", 0.0);
+        String name = e.strVal("name", "");
+        String effects = e.strVal("effects", "");
+
+        var rng = ctx.level.random;
+        for (int i = 0; i < count; i++) {
+            Entity spawned = type.create(ctx.level);
+            if (spawned == null) continue;
+            double dx = (rng.nextDouble() - 0.5) * spread * 2;
+            double dz = (rng.nextDouble() - 0.5) * spread * 2;
+            spawned.moveTo(ctx.pos.getX() + 0.5 + dx, ctx.pos.getY() + 1, ctx.pos.getZ() + 0.5 + dz);
+            if (!name.isEmpty()) spawned.setCustomName(Component.literal(name));
+            if (spawned instanceof LivingEntity le) {
+                if (health > 0) {
+                    Attribute hp = BuiltInRegistries.ATTRIBUTE.get(
+                            new ResourceLocation("minecraft:generic.max_health"));
+                    AttributeInstance inst = hp != null ? le.getAttribute(hp) : null;
+                    if (inst != null) inst.setBaseValue(health);
+                    le.setHealth((float) health);
+                }
+                if (damage > 0) {
+                    Attribute atk = BuiltInRegistries.ATTRIBUTE.get(
+                            new ResourceLocation("minecraft:generic.attack_damage"));
+                    AttributeInstance inst = atk != null ? le.getAttribute(atk) : null;
+                    if (inst != null) inst.setBaseValue(damage);
+                }
+                if (speed > 0) {
+                    Attribute spd = BuiltInRegistries.ATTRIBUTE.get(
+                            new ResourceLocation("minecraft:generic.movement_speed"));
+                    AttributeInstance inst = spd != null ? le.getAttribute(spd) : null;
+                    if (inst != null) inst.setBaseValue(speed);
+                }
+                if (!effects.isEmpty()) {
+                    for (String seg : effects.split(",")) {
+                        String[] pp = seg.trim().split(":");
+                        if (pp.length < 3) continue;
+                        String id = pp[0] + ":" + pp[1];
+                        MobEffect me = BuiltInRegistries.MOB_EFFECT.get(new ResourceLocation(id));
+                        if (me == null) continue;
+                        int lvl = parseIntSafe(pp[2], 0);
+                        int dur = pp.length > 3 ? parseIntSafe(pp[3], 99999) : 99999;
+                        le.addEffect(new MobEffectInstance(me, dur, lvl, false, false));
+                    }
+                }
+            }
+            ctx.level.addFreshEntity(spawned);
+        }
+    }
+
+    // ==================================================================
+    // v7：原子化的「世界方向」
+    //   ef_gravity_dir  只改重力（物理）
+    //   ef_view_flip    只改视角（俯仰倒置）
+    //   ef_input_flip   只改操作（前后左右反向）
+    // 三者组合 = 完整的「世界上下颠倒」
+    // ==================================================================
+
+    private static void gravityDir(Anomaly.Effect e, TriggerContext ctx) {
+        boolean up = "up".equals(e.strVal("direction", "up"));
+        for (LivingEntity le : selectTargets(e, ctx)) {
+            TagStore.add(le.getUUID(), "lanbai:gup", up ? Scheduler.now() + Integer.MAX_VALUE : 0);
+            if (!up) TagStore.remove(le.getUUID(), "lanbai:gup");
+        }
+    }
+
+    private static void viewFlip(Anomaly.Effect e, TriggerContext ctx) {
+        boolean on = e.val("value", Boolean.TRUE) != Boolean.FALSE;
+        for (LivingEntity le : selectTargets(e, ctx)) {
+            if (on) TagStore.add(le.getUUID(), "lanbai:vflip", 0);
+            else TagStore.remove(le.getUUID(), "lanbai:vflip");
+        }
+    }
+
+    private static void inputFlip(Anomaly.Effect e, TriggerContext ctx) {
+        boolean on = e.val("value", Boolean.TRUE) != Boolean.FALSE;
+        for (LivingEntity le : selectTargets(e, ctx)) {
+            if (on) TagStore.add(le.getUUID(), "lanbai:iflip", 0);
+            else TagStore.remove(le.getUUID(), "lanbai:iflip");
         }
     }
 }

@@ -2187,5 +2187,195 @@
    }
   ],
   "intraConflict": false
+ },
+ {
+  "id": "b06_diamond_portal",
+  "name": "钻石大陆传送门",
+  "book": "CUSTOM",
+  "icon": "minecraft:flint_and_steel",
+  "desc": "§7用钻石块搭成地狱门形状（4×5）\n§7然后点火\n§8[结构检测] 验证原子化形状判定",
+  "bindTarget": {
+   "scope": "TYPE",
+   "kind": "ITEM",
+   "ref": "minecraft:flint_and_steel",
+   "persistent": false
+  },
+  "effects": [
+   {
+    "id": "ef_message",
+    "params": {
+     "text": "§b[钻石门] 结构成立，正在开启",
+     "selector": "source",
+     "mode": "chat"
+    },
+    "trigger": {
+     "conditions": [
+      "on_use_block"
+     ],
+     "mode": "OR"
+    },
+    "when": {
+     "structure": "minecraft:diamond_block|4x5"
+    }
+   },
+   {
+    "id": "ef_dimension",
+    "params": {
+     "dimension": "lanbai:diamond_land",
+     "selector": "source",
+     "targetFilter": "player"
+    },
+    "trigger": {
+     "conditions": [
+      "on_use_block"
+     ],
+     "mode": "OR"
+    },
+    "when": {
+     "structure": "minecraft:diamond_block|4x5"
+    }
+   },
+   {
+    "id": "ef_particle",
+    "params": {
+     "particle": "minecraft:end_rod",
+     "count": 60,
+     "spread": 2.0,
+     "speed": 0.2
+    },
+    "trigger": {
+     "conditions": [
+      "on_use_block"
+     ],
+     "mode": "OR"
+    },
+    "when": {
+     "structure": "minecraft:diamond_block|4x5"
+    }
+   },
+   {
+    "id": "ef_sound",
+    "params": {
+     "sound": "minecraft:block.portal.travel",
+     "volume": 1.0
+    },
+    "trigger": {
+     "conditions": [
+      "on_use_block"
+     ],
+     "mode": "OR"
+    },
+    "when": {
+     "structure": "minecraft:diamond_block|4x5"
+    }
+   }
+  ],
+  "intraConflict": false,
+  "depth": 60000
+ },
+ {
+  "id": "b06_flip_abyss",
+  "name": "翻转深渊",
+  "book": "CUSTOM",
+  "icon": "minecraft:bedrock",
+  "desc": "§7维度级绝对特性：\n§7进入者重力反转、视角倒置、操作反向\n§8[原子化] 三层可独立开关",
+  "bindTarget": {
+   "scope": "TYPE",
+   "kind": "DIMENSION",
+   "ref": "lanbai:diamond_land",
+   "persistent": false
+  },
+  "effects": [
+   {
+    "id": "ef_gravity_dir",
+    "params": {
+     "direction": "up",
+     "selector": "around",
+     "radius": 64,
+     "targetFilter": "player"
+    }
+   },
+   {
+    "id": "ef_view_flip",
+    "params": {
+     "value": true,
+     "selector": "around",
+     "radius": 64,
+     "targetFilter": "player"
+    }
+   },
+   {
+    "id": "ef_input_flip",
+    "params": {
+     "value": true,
+     "selector": "around",
+     "radius": 64,
+     "targetFilter": "player"
+    }
+   },
+   {
+    "id": "ef_message",
+    "params": {
+     "text": "§5[翻转深渊] 这里没有上，也没有下",
+     "selector": "around",
+     "radius": 64,
+     "targetFilter": "player",
+     "mode": "actionbar"
+    },
+    "period": 100
+   }
+  ],
+  "intraConflict": false,
+  "depth": 61000
+ },
+ {
+  "id": "b06_abyss_hunter",
+  "name": "深渊猎手",
+  "book": "CUSTOM",
+  "icon": "minecraft:wither_skeleton_skull",
+  "desc": "§7维度级怪物模板：\n§7血厚、攻高、带力量与抗性\n§8[模板] 一次定义，多处复用",
+  "bindTarget": {
+   "scope": "TYPE",
+   "kind": "ITEM",
+   "ref": "minecraft:wither_skeleton_skull",
+   "persistent": false
+  },
+  "effects": [
+   {
+    "id": "ef_summon",
+    "params": {
+     "entity": "minecraft:wither_skeleton",
+     "count": 3,
+     "spread": 5,
+     "health": 80,
+     "damage": 12,
+     "speed": 0.3,
+     "name": "§4深渊猎手",
+     "effects": "minecraft:strength:2:99999,minecraft:resistance:2:99999,minecraft:speed:1:99999"
+    },
+    "trigger": {
+     "conditions": [
+      "on_use"
+     ],
+     "mode": "OR"
+    }
+   },
+   {
+    "id": "ef_message",
+    "params": {
+     "text": "§4[深渊] 猎手已降临",
+     "selector": "source",
+     "mode": "chat"
+    },
+    "trigger": {
+     "conditions": [
+      "on_use"
+     ],
+     "mode": "OR"
+    }
+   }
+  ],
+  "intraConflict": false,
+  "depth": 60000
  }
 ]

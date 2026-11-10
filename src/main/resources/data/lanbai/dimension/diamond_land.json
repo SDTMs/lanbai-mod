@@ -1,0 +1,12 @@
+{
+  "type": "lanbai:diamond_land",
+  "generator": {
+    "type": "minecraft:flat",
+    "settings": {
+      "layers": [{"block": "minecraft:diamond_block", "height": 64}],
+      "biome": "minecraft:the_void",
+      "features": false,
+      "lakes": false
+    }
+  }
+}
