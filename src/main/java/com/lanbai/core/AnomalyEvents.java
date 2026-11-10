@@ -332,7 +332,31 @@ public class AnomalyEvents {
                                 dispatchPassive(level, ctx, List.of(a), player);
                             }
                         }
-                        case ENTITY, ITEM, BEHAVIOR, DIMENSION, PLAYER_DATA -> {
+                        case ITEM -> {
+                            if (a.target.scope == Anomaly.BindTarget.Scope.INSTANCE) {
+                                if (player.getUUID().toString().equals(a.target.ref)) {
+                                    TriggerContext ctx = new TriggerContext(level)
+                                            .source(player).target(player);
+                                    dispatch(level, ctx, List.of(a), fired("on_hold", "on_near"), player);
+                                    dispatchPassive(level, ctx, List.of(a), player);
+                                    dispatchPeriodic(level, ctx, List.of(a), player);
+                                }
+                            } else {
+                                // TYPE 绑定：手持/副手拿着该物品即生效
+                                var main = BuiltInRegistries.ITEM.getKey(player.getMainHandItem().getItem());
+                                var off = BuiltInRegistries.ITEM.getKey(player.getOffhandItem().getItem());
+                                boolean match = (main != null && main.toString().equals(a.target.ref))
+                                        || (off != null && off.toString().equals(a.target.ref));
+                                if (match) {
+                                    TriggerContext ctx = new TriggerContext(level)
+                                            .source(player).target(player);
+                                    dispatch(level, ctx, List.of(a), fired("on_hold", "on_near"), player);
+                                    dispatchPassive(level, ctx, List.of(a), player);
+                                    dispatchPeriodic(level, ctx, List.of(a), player);
+                                }
+                            }
+                        }
+                        case ENTITY, BEHAVIOR, DIMENSION, PLAYER_DATA -> {
                             if (player.getUUID().toString().equals(a.target.ref)) {
                                 TriggerContext ctx = new TriggerContext(level)
                                         .source(player).target(player);

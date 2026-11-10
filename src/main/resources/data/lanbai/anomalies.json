@@ -117,7 +117,6 @@
   "effects": [
    {
     "id": "ef_immune",
-    "trigger": null,
     "params": {
      "type": "magic"
     },
@@ -168,7 +167,6 @@
   "effects": [
    {
     "id": "ef_rule",
-    "trigger": null,
     "params": {
      "rule": "ban_psychic",
      "radius": 32
@@ -307,5 +305,989 @@
    }
   ],
   "intraConflict": false
+ },
+ {
+  "id": "b03_eye_of_god",
+  "name": "上帝视角",
+  "book": "B03",
+  "bindTarget": {
+   "scope": "TYPE",
+   "kind": "ITEM",
+   "ref": "minecraft:ender_eye",
+   "persistent": false
+  },
+  "effects": [
+   {
+    "id": "ef_scan",
+    "params": {
+     "radius": 96,
+     "header": "§7[上帝视角] 全图俯瞰：",
+     "targetFilter": "all"
+    },
+    "trigger": {
+     "conditions": [
+      "on_use"
+     ],
+     "mode": "OR"
+    }
+   },
+   {
+    "id": "ef_command",
+    "params": {
+     "cmd": "effect give @a minecraft:glowing 120 0 true",
+     "as": "server"
+    },
+    "trigger": {
+     "conditions": [
+      "on_use"
+     ],
+     "mode": "OR"
+    }
+   },
+   {
+    "id": "ef_status",
+    "params": {
+     "effect": "minecraft:night_vision",
+     "level": 0,
+     "duration": -1,
+     "targetFilter": "player",
+     "selector": "source"
+    },
+    "trigger": {
+     "conditions": [
+      "on_use"
+     ],
+     "mode": "OR"
+    }
+   },
+   {
+    "id": "ef_set_attr",
+    "params": {
+     "attr": "minecraft:generic.max_health",
+     "value": 4.0,
+     "mode": "add",
+     "targetFilter": "player"
+    },
+    "trigger": {
+     "conditions": [
+      "on_use"
+     ],
+     "mode": "OR"
+    }
+   }
+  ],
+  "intraConflict": false,
+  "depth": 46000
+ },
+ {
+  "id": "b02_absolute_spray",
+  "name": "绝对接触喷雾",
+  "book": "B02",
+  "bindTarget": {
+   "scope": "TYPE",
+   "kind": "ITEM",
+   "ref": "minecraft:glass_bottle",
+   "persistent": false
+  },
+  "effects": [
+   {
+    "id": "ef_deny",
+    "params": {
+     "type": "interact"
+    }
+   },
+   {
+    "id": "ef_stop",
+    "params": {
+     "selector": "around",
+     "radius": 6,
+     "targetFilter": "all"
+    },
+    "trigger": {
+     "conditions": [
+      "on_use"
+     ],
+     "mode": "OR"
+    }
+   },
+   {
+    "id": "ef_freeze",
+    "params": {
+     "ticks": 200,
+     "selector": "around",
+     "radius": 6,
+     "targetFilter": "all"
+    },
+    "trigger": {
+     "conditions": [
+      "on_use"
+     ],
+     "mode": "OR"
+    }
+   }
+  ],
+  "intraConflict": false,
+  "depth": 46137
+ },
+ {
+  "id": "b02_hyper_regen",
+  "name": "超速再生",
+  "book": "B02",
+  "bindTarget": {
+   "scope": "TYPE",
+   "kind": "ITEM",
+   "ref": "minecraft:golden_apple",
+   "persistent": false
+  },
+  "effects": [
+   {
+    "id": "ef_deny",
+    "params": {
+     "type": "death"
+    }
+   },
+   {
+    "id": "ef_heal",
+    "params": {
+     "amount": 20.0,
+     "cureAll": true,
+     "targetFilter": "player",
+     "selector": "source"
+    },
+    "period": 20
+   },
+   {
+    "id": "ef_set_attr",
+    "params": {
+     "attr": "minecraft:generic.max_health",
+     "value": 20.0,
+     "mode": "add",
+     "targetFilter": "player"
+    },
+    "trigger": {
+     "conditions": [
+      "on_use"
+     ],
+     "mode": "OR"
+    }
+   }
+  ],
+  "intraConflict": false,
+  "depth": 46274
+ },
+ {
+  "id": "b02_golden_finger",
+  "name": "金手指",
+  "book": "B02",
+  "bindTarget": {
+   "scope": "TYPE",
+   "kind": "ITEM",
+   "ref": "minecraft:gold_nugget",
+   "persistent": false
+  },
+  "effects": [
+   {
+    "id": "ef_fill",
+    "params": {
+     "block": "minecraft:gold_block",
+     "radius": 2,
+     "hollow": false
+    },
+    "trigger": {
+     "conditions": [
+      "on_use_block"
+     ],
+     "mode": "OR"
+    }
+   },
+   {
+    "id": "ef_give",
+    "params": {
+     "item": "minecraft:gold_ingot",
+     "count": 8,
+     "selector": "source"
+    },
+    "trigger": {
+     "conditions": [
+      "on_use"
+     ],
+     "mode": "OR"
+    }
+   },
+   {
+    "id": "ef_sound",
+    "params": {
+     "sound": "minecraft:block.amethyst_block.chime",
+     "volume": 1.0
+    },
+    "trigger": {
+     "conditions": [
+      "on_use"
+     ],
+     "mode": "OR"
+    }
+   }
+  ],
+  "intraConflict": false,
+  "depth": 46411
+ },
+ {
+  "id": "b03_geo_teleport",
+  "name": "地心传送阵",
+  "book": "B03",
+  "bindTarget": {
+   "scope": "INSTANCE",
+   "kind": "BLOCK",
+   "ref": "minecraft:overworld;0,-60,0",
+   "persistent": true
+  },
+  "effects": [
+   {
+    "id": "ef_command",
+    "params": {
+     "cmd": "spread players 0 0 200 3600 false @s",
+     "as": "player"
+    },
+    "trigger": {
+     "conditions": [
+      "on_contact"
+     ],
+     "mode": "OR"
+    }
+   },
+   {
+    "id": "ef_lightning",
+    "params": {
+     "radius": 4,
+     "damage": 8.0
+    },
+    "trigger": {
+     "conditions": [
+      "on_near"
+     ],
+     "mode": "OR"
+    }
+   },
+   {
+    "id": "ef_deny",
+    "params": {
+     "type": "break"
+    }
+   }
+  ],
+  "intraConflict": false,
+  "depth": 46548
+ },
+ {
+  "id": "b03_coordinate_glove",
+  "name": "坐标手套",
+  "book": "B03",
+  "bindTarget": {
+   "scope": "TYPE",
+   "kind": "ITEM",
+   "ref": "minecraft:leather",
+   "persistent": false
+  },
+  "effects": [
+   {
+    "id": "ef_deny",
+    "params": {
+     "type": "knockback"
+    }
+   },
+   {
+    "id": "ef_stop",
+    "params": {
+     "selector": "around",
+     "radius": 4,
+     "targetFilter": "all"
+    },
+    "trigger": {
+     "conditions": [
+      "on_use"
+     ],
+     "mode": "OR"
+    }
+   },
+   {
+    "id": "ef_invulnerable",
+    "params": {
+     "value": true,
+     "selector": "source",
+     "targetFilter": "player"
+    },
+    "trigger": {
+     "conditions": [
+      "on_use"
+     ],
+     "mode": "OR"
+    }
+   },
+   {
+    "id": "ef_command",
+    "params": {
+     "cmd": "effect give @s minecraft:resistance 300 4 true",
+     "as": "player"
+    },
+    "trigger": {
+     "conditions": [
+      "on_use"
+     ],
+     "mode": "OR"
+    }
+   }
+  ],
+  "intraConflict": false,
+  "depth": 46685
+ },
+ {
+  "id": "b03_solid_lightning",
+  "name": "固态闪电",
+  "book": "B03",
+  "bindTarget": {
+   "scope": "TYPE",
+   "kind": "ITEM",
+   "ref": "minecraft:lightning_rod",
+   "persistent": false
+  },
+  "effects": [
+   {
+    "id": "ef_deny",
+    "params": {
+     "type": "break"
+    }
+   },
+   {
+    "id": "ef_deny",
+    "params": {
+     "type": "damage"
+    }
+   },
+   {
+    "id": "ef_lightning",
+    "params": {
+     "radius": 5,
+     "damage": 12.0
+    },
+    "trigger": {
+     "conditions": [
+      "on_use"
+     ],
+     "mode": "OR"
+    }
+   },
+   {
+    "id": "ef_command",
+    "params": {
+     "cmd": "summon lightning_bolt ~ ~ ~",
+     "as": "player"
+    },
+    "trigger": {
+     "conditions": [
+      "on_use"
+     ],
+     "mode": "OR"
+    }
+   }
+  ],
+  "intraConflict": false,
+  "depth": 46822
+ },
+ {
+  "id": "b03_wither_field",
+  "name": "半径五米枯叶化",
+  "book": "B03",
+  "bindTarget": {
+   "scope": "INSTANCE",
+   "kind": "BLOCK",
+   "ref": "minecraft:overworld;0,64,0",
+   "persistent": false
+  },
+  "effects": [
+   {
+    "id": "ef_fill",
+    "params": {
+     "block": "minecraft:dead_bush",
+     "radius": 5
+    },
+    "period": 20
+   },
+   {
+    "id": "ef_status",
+    "params": {
+     "effect": "minecraft:wither",
+     "level": 2,
+     "duration": 100,
+     "radius": 5
+    },
+    "period": 20
+   },
+   {
+    "id": "ef_dispel",
+    "params": {
+     "beneficial": true,
+     "selector": "around",
+     "radius": 5
+    },
+    "period": 20
+   }
+  ],
+  "intraConflict": false,
+  "depth": 46959
+ },
+ {
+  "id": "b03_bronze_touch",
+  "name": "触碰化作青铜",
+  "book": "B03",
+  "bindTarget": {
+   "scope": "TYPE",
+   "kind": "ITEM",
+   "ref": "minecraft:copper_ingot",
+   "persistent": false
+  },
+  "effects": [
+   {
+    "id": "ef_freeze",
+    "params": {
+     "ticks": 120,
+     "selector": "target"
+    },
+    "trigger": {
+     "conditions": [
+      "on_use"
+     ],
+     "mode": "OR"
+    }
+   },
+   {
+    "id": "ef_fill",
+    "params": {
+     "block": "minecraft:copper_block",
+     "radius": 1
+    },
+    "trigger": {
+     "conditions": [
+      "on_use_block"
+     ],
+     "mode": "OR"
+    }
+   },
+   {
+    "id": "ef_command",
+    "params": {
+     "cmd": "effect give @s minecraft:mining_fatigue 200 2 true",
+     "as": "player"
+    },
+    "trigger": {
+     "conditions": [
+      "on_use"
+     ],
+     "mode": "OR"
+    }
+   },
+   {
+    "id": "ef_message",
+    "params": {
+     "text": "§e[青铜化] 接触之物已凝固",
+     "selector": "source",
+     "mode": "actionbar"
+    },
+    "trigger": {
+     "conditions": [
+      "on_use"
+     ],
+     "mode": "OR"
+    }
+   }
+  ],
+  "intraConflict": false,
+  "depth": 47096
+ },
+ {
+  "id": "b03_water_ring",
+  "name": "水芒",
+  "book": "B03",
+  "bindTarget": {
+   "scope": "TYPE",
+   "kind": "ITEM",
+   "ref": "minecraft:heart_of_the_sea",
+   "persistent": false
+  },
+  "effects": [
+   {
+    "id": "ef_fill",
+    "params": {
+     "block": "minecraft:ice",
+     "radius": 3
+    },
+    "trigger": {
+     "conditions": [
+      "on_use"
+     ],
+     "mode": "OR"
+    }
+   },
+   {
+    "id": "ef_damage",
+    "params": {
+     "amount": 6.0,
+     "radius": 3
+    },
+    "trigger": {
+     "conditions": [
+      "on_use"
+     ],
+     "mode": "OR"
+    }
+   },
+   {
+    "id": "ef_command",
+    "params": {
+     "cmd": "effect give @s minecraft:water_breathing 300 0 true",
+     "as": "player"
+    },
+    "trigger": {
+     "conditions": [
+      "on_use"
+     ],
+     "mode": "OR"
+    }
+   },
+   {
+    "id": "ef_pull",
+    "params": {
+     "speed": 2.5,
+     "soulDamage": 4.0
+    },
+    "trigger": {
+     "conditions": [
+      "on_use"
+     ],
+     "mode": "OR"
+    }
+   }
+  ],
+  "intraConflict": false,
+  "depth": 47233
+ },
+ {
+  "id": "b03_pain_crystal",
+  "name": "痛楚水晶",
+  "book": "B03",
+  "bindTarget": {
+   "scope": "TYPE",
+   "kind": "ITEM",
+   "ref": "minecraft:amethyst_shard",
+   "persistent": false
+  },
+  "effects": [
+   {
+    "id": "ef_deny",
+    "params": {
+     "type": "damage"
+    }
+   },
+   {
+    "id": "ef_dispel",
+    "params": {
+     "beneficial": false,
+     "selector": "source",
+     "targetFilter": "player"
+    },
+    "period": 20
+   },
+   {
+    "id": "ef_heal",
+    "params": {
+     "amount": 6.0,
+     "cureAll": true,
+     "targetFilter": "player",
+     "selector": "source"
+    },
+    "trigger": {
+     "conditions": [
+      "on_use"
+     ],
+     "mode": "OR"
+    }
+   }
+  ],
+  "intraConflict": false,
+  "depth": 47370
+ },
+ {
+  "id": "b03_hunger_ghost",
+  "name": "饿死鬼效应",
+  "book": "B03",
+  "bindTarget": {
+   "scope": "TYPE",
+   "kind": "ITEM",
+   "ref": "minecraft:rotten_flesh",
+   "persistent": false
+  },
+  "effects": [
+   {
+    "id": "ef_deny",
+    "params": {
+     "type": "death"
+    }
+   },
+   {
+    "id": "ef_message",
+    "params": {
+     "text": "§c[饿死鬼] 十秒不死，吃！",
+     "selector": "source",
+     "mode": "title"
+    },
+    "trigger": {
+     "conditions": [
+      "on_damage"
+     ],
+     "mode": "OR"
+    }
+   },
+   {
+    "id": "ef_heal",
+    "params": {
+     "amount": 10.0,
+     "targetFilter": "player",
+     "selector": "source"
+    },
+    "trigger": {
+     "conditions": [
+      "on_attacked"
+     ],
+     "mode": "OR"
+    },
+    "delay": 100
+   },
+   {
+    "id": "ef_status",
+    "params": {
+     "effect": "minecraft:hunger",
+     "level": 3,
+     "duration": 200,
+     "targetFilter": "player",
+     "selector": "source"
+    },
+    "trigger": {
+     "conditions": [
+      "on_damage"
+     ],
+     "mode": "OR"
+    }
+   }
+  ],
+  "intraConflict": false,
+  "depth": 47507
+ },
+ {
+  "id": "b03_hawk_eye",
+  "name": "鹰眼",
+  "book": "B03",
+  "bindTarget": {
+   "scope": "TYPE",
+   "kind": "ITEM",
+   "ref": "minecraft:spyglass",
+   "persistent": false
+  },
+  "effects": [
+   {
+    "id": "ef_scan",
+    "params": {
+     "radius": 64,
+     "header": "§7[鹰眼] 锁定：",
+     "targetFilter": "all"
+    },
+    "trigger": {
+     "conditions": [
+      "on_use"
+     ],
+     "mode": "OR"
+    }
+   },
+   {
+    "id": "ef_perceive",
+    "params": {
+     "mode": "tracking"
+    },
+    "trigger": {
+     "conditions": [
+      "on_use"
+     ],
+     "mode": "OR"
+    }
+   },
+   {
+    "id": "ef_command",
+    "params": {
+     "cmd": "effect give @a minecraft:glowing 90 0 true",
+     "as": "server"
+    },
+    "trigger": {
+     "conditions": [
+      "on_use"
+     ],
+     "mode": "OR"
+    }
+   },
+   {
+    "id": "ef_command",
+    "params": {
+     "cmd": "effect give @s minecraft:night_vision 300 0 true",
+     "as": "player"
+    },
+    "trigger": {
+     "conditions": [
+      "on_use"
+     ],
+     "mode": "OR"
+    }
+   }
+  ],
+  "intraConflict": false,
+  "depth": 47644
+ },
+ {
+  "id": "b03_medusa",
+  "name": "美杜莎之石",
+  "book": "B03",
+  "bindTarget": {
+   "scope": "INSTANCE",
+   "kind": "BLOCK",
+   "ref": "minecraft:overworld;0,64,0",
+   "persistent": false
+  },
+  "effects": [
+   {
+    "id": "ef_stop",
+    "params": {
+     "selector": "around",
+     "radius": 10,
+     "targetFilter": "all"
+    },
+    "period": 20
+   },
+   {
+    "id": "ef_freeze",
+    "params": {
+     "ticks": 100,
+     "selector": "around",
+     "radius": 10,
+     "targetFilter": "all"
+    },
+    "period": 40
+   },
+   {
+    "id": "ef_deny",
+    "params": {
+     "type": "damage"
+    }
+   },
+   {
+    "id": "ef_fill",
+    "params": {
+     "block": "minecraft:stone",
+     "radius": 3
+    },
+    "period": 200
+   }
+  ],
+  "intraConflict": false,
+  "depth": 47781
+ },
+ {
+  "id": "b03_rule_pen",
+  "name": "规则之笔",
+  "book": "B03",
+  "bindTarget": {
+   "scope": "TYPE",
+   "kind": "ITEM",
+   "ref": "minecraft:feather",
+   "persistent": false
+  },
+  "effects": [
+   {
+    "id": "ef_command",
+    "params": {
+     "cmd": "gamerule keepInventory true",
+     "as": "server"
+    },
+    "trigger": {
+     "conditions": [
+      "on_use"
+     ],
+     "mode": "OR"
+    }
+   },
+   {
+    "id": "ef_command",
+    "params": {
+     "cmd": "gamerule doDaylightCycle false",
+     "as": "server"
+    },
+    "trigger": {
+     "conditions": [
+      "on_use"
+     ],
+     "mode": "OR"
+    }
+   },
+   {
+    "id": "ef_command",
+    "params": {
+     "cmd": "gamerule naturalRegeneration false",
+     "as": "server"
+    },
+    "trigger": {
+     "conditions": [
+      "on_use"
+     ],
+     "mode": "OR"
+    }
+   },
+   {
+    "id": "ef_message",
+    "params": {
+     "text": "§6[规则之笔] 世界规则已被改写",
+     "selector": "source",
+     "mode": "chat"
+    },
+    "trigger": {
+     "conditions": [
+      "on_use"
+     ],
+     "mode": "OR"
+    }
+   }
+  ],
+  "intraConflict": false,
+  "depth": 47918
+ },
+ {
+  "id": "b03_god_mode",
+  "name": "上帝模式",
+  "book": "B03",
+  "bindTarget": {
+   "scope": "TYPE",
+   "kind": "ITEM",
+   "ref": "minecraft:nether_star",
+   "persistent": false
+  },
+  "effects": [
+   {
+    "id": "ef_gamemode",
+    "params": {
+     "mode": "creative",
+     "selector": "source",
+     "targetFilter": "player"
+    },
+    "trigger": {
+     "conditions": [
+      "on_use"
+     ],
+     "mode": "OR"
+    }
+   },
+   {
+    "id": "ef_flight",
+    "params": {
+     "allow": true,
+     "selector": "source",
+     "targetFilter": "player"
+    },
+    "trigger": {
+     "conditions": [
+      "on_use"
+     ],
+     "mode": "OR"
+    }
+   },
+   {
+    "id": "ef_invulnerable",
+    "params": {
+     "value": true,
+     "selector": "source",
+     "targetFilter": "player"
+    },
+    "trigger": {
+     "conditions": [
+      "on_use"
+     ],
+     "mode": "OR"
+    }
+   },
+   {
+    "id": "ef_command",
+    "params": {
+     "cmd": "effect give @s minecraft:resistance 9999 4 true",
+     "as": "player"
+    },
+    "trigger": {
+     "conditions": [
+      "on_use"
+     ],
+     "mode": "OR"
+    }
+   }
+  ],
+  "intraConflict": false,
+  "depth": 48055
+ },
+ {
+  "id": "b02_cosmic_trash",
+  "name": "宇宙垃圾桶",
+  "book": "B02",
+  "bindTarget": {
+   "scope": "TYPE",
+   "kind": "ITEM",
+   "ref": "minecraft:bucket",
+   "persistent": false
+  },
+  "effects": [
+   {
+    "id": "ef_blackhole",
+    "params": {
+     "radius": 20,
+     "speed": 4.0
+    },
+    "trigger": {
+     "conditions": [
+      "on_use"
+     ],
+     "mode": "OR"
+    }
+   },
+   {
+    "id": "ef_kill",
+    "params": {
+     "selector": "around",
+     "radius": 5,
+     "targetFilter": "all"
+    },
+    "trigger": {
+     "conditions": [
+      "on_use"
+     ],
+     "mode": "OR"
+    },
+    "delay": 60
+   },
+   {
+    "id": "ef_sound",
+    "params": {
+     "sound": "minecraft:entity.wither.spawn",
+     "volume": 2.0
+    },
+    "trigger": {
+     "conditions": [
+      "on_use"
+     ],
+     "mode": "OR"
+    }
+   }
+  ],
+  "intraConflict": false,
+  "depth": 48192
  }
 ]
